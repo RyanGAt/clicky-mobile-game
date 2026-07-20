@@ -25,6 +25,8 @@ func _ready() -> void:
 	add_child(auto_save_timer)
 
 	GameManager.upgrade_purchased.connect(func(_id): save_game())
+	GameManager.switch_unlocked.connect(func(_id): save_game())
+	AchievementManager.achievement_unlocked.connect(func(_id): save_game())
 	get_tree().auto_accept_quit = false
 
 func _notification(what: int) -> void:
@@ -39,9 +41,14 @@ func save_game() -> void:
 	var data := {
 		"version": SAVE_VERSION,
 		"clicks": GameManager.clicks,
+		"lifetime_clicks": GameManager.lifetime_clicks,
+		"tap_count": GameManager.tap_count,
 		"click_power": GameManager.click_power,
 		"clicks_per_second": GameManager.clicks_per_second,
 		"owned": GameManager.owned,
+		"unlocked_switches": GameManager.unlocked_switches,
+		"equipped_switch": GameManager.equipped_switch,
+		"unlocked_achievements": AchievementManager.unlocked,
 		"settings": settings,
 		"last_active_unix": Time.get_unix_time_from_system(),
 	}
@@ -62,6 +69,8 @@ func load_game() -> void:
 		return
 
 	GameManager.clicks = float(parsed.get("clicks", 0.0))
+	GameManager.lifetime_clicks = float(parsed.get("lifetime_clicks", GameManager.clicks))
+	GameManager.tap_count = int(parsed.get("tap_count", 0))
 	GameManager.click_power = float(parsed.get("click_power", 1.0))
 	GameManager.clicks_per_second = float(parsed.get("clicks_per_second", 0.0))
 
@@ -69,6 +78,16 @@ func load_game() -> void:
 	if saved_owned is Dictionary:
 		for id in saved_owned.keys():
 			GameManager.owned[id] = int(saved_owned[id])
+
+	var saved_unlocked_switches = parsed.get("unlocked_switches", [])
+	if saved_unlocked_switches is Array and saved_unlocked_switches.size() > 0:
+		GameManager.unlocked_switches = saved_unlocked_switches
+
+	GameManager.equipped_switch = String(parsed.get("equipped_switch", GameManager.equipped_switch))
+
+	var saved_achievements = parsed.get("unlocked_achievements", [])
+	if saved_achievements is Array:
+		AchievementManager.unlocked = saved_achievements
 
 	var saved_settings = parsed.get("settings", {})
 	if saved_settings is Dictionary:

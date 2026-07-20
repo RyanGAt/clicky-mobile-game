@@ -2,10 +2,15 @@ extends Node
 
 signal clicks_changed(total: float)
 signal upgrade_purchased(id: String)
+signal switch_unlocked(id: String)
+signal switch_equipped(id: String)
 
 const UPGRADES_PATH := "res://data/upgrades.json"
+const SWITCHES_PATH := "res://data/switches.json"
 
 var clicks: float = 0.0
+var lifetime_clicks: float = 0.0
+var tap_count: int = 0
 var click_power: float = 1.0
 var clicks_per_second: float = 0.0
 
@@ -15,15 +20,21 @@ var owned: Dictionary = {
 	"automatic_finger": 0,
 }
 
+var switches: Dictionary = {}
+var unlocked_switches: Array = ["office_membrane"]
+var equipped_switch: String = "office_membrane"
+
 var _cps_accumulator: float = 0.0
 
 func _ready() -> void:
 	_load_upgrade_data()
+	_load_switch_data()
 
 func _process(delta: float) -> void:
-	if clicks_per_second <= 0.0:
+	var effective_cps := get_effective_cps()
+	if effective_cps <= 0.0:
 		return
-	_cps_accumulator += clicks_per_second * delta
+	_cps_accumulator += effective_cps * delta
 	if _cps_accumulator >= 1.0:
 		var whole := floor(_cps_accumulator)
 		_cps_accumulator -= whole
@@ -38,14 +49,37 @@ func _load_upgrade_data() -> void:
 	if parsed is Dictionary:
 		upgrades = parsed
 
+func _load_switch_data() -> void:
+	var file := FileAccess.open(SWITCHES_PATH, FileAccess.READ)
+	if file == null:
+		push_error("Could not open %s" % SWITCHES_PATH)
+		return
+	var parsed = JSON.parse_string(file.get_as_text())
+	if parsed is Dictionary:
+		switches = parsed
+
 func add_clicks(amount: float) -> void:
 	clicks += amount
+	lifetime_clicks += amount
 	clicks_changed.emit(clicks)
+	_check_switch_unlocks()
 
 func tap() -> float:
-	var earned := click_power
+	var earned := get_effective_click_power()
+	tap_count += 1
 	add_clicks(earned)
 	return earned
+
+func get_equipped_switch_data() -> Dictionary:
+	return switches.get(equipped_switch, {})
+
+func get_effective_click_power() -> float:
+	var multiplier: float = get_equipped_switch_data().get("click_power_multiplier", 1.0)
+	return click_power * multiplier
+
+func get_effective_cps() -> float:
+	var multiplier: float = get_equipped_switch_data().get("cps_multiplier", 1.0)
+	return clicks_per_second * multiplier
 
 func get_upgrade_cost(id: String) -> float:
 	var data: Dictionary = upgrades.get(id, {})
@@ -72,6 +106,25 @@ func buy_upgrade(id: String) -> bool:
 
 	clicks_changed.emit(clicks)
 	upgrade_purchased.emit(id)
+	return true
+
+func _check_switch_unlocks() -> void:
+	for id in switches.keys():
+		if unlocked_switches.has(id):
+			continue
+		var requirement: float = switches[id].get("unlock_requirement_clicks", 0.0)
+		if lifetime_clicks >= requirement:
+			unlocked_switches.append(id)
+			switch_unlocked.emit(id)
+
+func is_switch_unlocked(id: String) -> bool:
+	return unlocked_switches.has(id)
+
+func equip_switch(id: String) -> bool:
+	if not is_switch_unlocked(id):
+		return false
+	equipped_switch = id
+	switch_equipped.emit(id)
 	return true
 
 func format_number(value: float) -> String:

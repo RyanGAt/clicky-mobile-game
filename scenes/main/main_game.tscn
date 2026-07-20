@@ -91,6 +91,17 @@ grow_horizontal = 0
 theme_override_font_sizes/font_size = 24
 text = "Settings"
 
+[node name="CollectionButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 0
+offset_left = 40.0
+offset_top = 60.0
+offset_right = 200.0
+offset_bottom = 140.0
+theme_override_font_sizes/font_size = 24
+text = "Collection"
+
 [node name="FloatingTextLayer" type="Control" parent="."]
 unique_name_in_owner = true
 layout_mode = 1

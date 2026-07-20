@@ -6,6 +6,7 @@ const TAP_VIBRATION_MS := 15
 
 const SettingsScreenScene := preload("res://scenes/screens/settings_screen.tscn")
 const OfflineEarningsPopupScene := preload("res://scenes/screens/offline_earnings_popup.tscn")
+const CollectionScreenScene := preload("res://scenes/screens/collection_screen.tscn")
 
 @onready var switch_button: Button = %SwitchButton
 @onready var switch_audio: AudioStreamPlayer = %SwitchAudio
@@ -16,6 +17,7 @@ const OfflineEarningsPopupScene := preload("res://scenes/screens/offline_earning
 @onready var stronger_finger_button: Button = %StrongerFingerButton
 @onready var automatic_finger_button: Button = %AutomaticFingerButton
 @onready var settings_button: Button = %SettingsButton
+@onready var collection_button: Button = %CollectionButton
 @onready var popup_layer: CanvasLayer = %PopupLayer
 
 var _tap_tween: Tween
@@ -29,12 +31,14 @@ func _ready() -> void:
 	stronger_finger_button.pressed.connect(func(): _buy("stronger_finger"))
 	automatic_finger_button.pressed.connect(func(): _buy("automatic_finger"))
 	settings_button.pressed.connect(_on_settings_pressed)
+	collection_button.pressed.connect(_on_collection_pressed)
+	AchievementManager.achievement_unlocked.connect(_on_achievement_unlocked)
 
 	_refresh_all_labels()
 	_show_offline_earnings_if_pending()
 
 func _process(_delta: float) -> void:
-	cps_label.text = "CPS: %s" % GameManager.format_number(GameManager.clicks_per_second)
+	cps_label.text = "CPS: %s" % GameManager.format_number(GameManager.get_effective_cps())
 	_refresh_upgrade_buttons()
 
 func _on_switch_pressed() -> void:
@@ -68,6 +72,29 @@ func _play_tap_vibration() -> void:
 
 func _on_settings_pressed() -> void:
 	popup_layer.add_child(SettingsScreenScene.instantiate())
+
+func _on_collection_pressed() -> void:
+	popup_layer.add_child(CollectionScreenScene.instantiate())
+
+func _on_achievement_unlocked(id: String) -> void:
+	var data: Dictionary = AchievementManager.achievements.get(id, {})
+	_spawn_toast("Achievement Unlocked: %s" % data.get("name", id))
+
+func _spawn_toast(message: String) -> void:
+	var label := Label.new()
+	label.text = message
+	label.add_theme_font_size_override("font_size", 32)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.anchor_left = 0.5
+	label.anchor_right = 0.5
+	label.position = Vector2(-260, 220)
+	label.size = Vector2(520, 60)
+	floating_text_layer.add_child(label)
+
+	var tween := create_tween()
+	tween.tween_interval(1.4)
+	tween.tween_property(label, "modulate:a", 0.0, 0.6)
+	tween.tween_callback(label.queue_free)
 
 func _show_offline_earnings_if_pending() -> void:
 	var offline := SaveManager.consume_pending_offline_earnings()
@@ -103,8 +130,8 @@ func _on_upgrade_purchased(_id: String) -> void:
 
 func _refresh_all_labels() -> void:
 	clicks_label.text = GameManager.format_number(GameManager.clicks)
-	cpt_label.text = "Per Tap: %s" % GameManager.format_number(GameManager.click_power)
-	cps_label.text = "CPS: %s" % GameManager.format_number(GameManager.clicks_per_second)
+	cpt_label.text = "Per Tap: %s" % GameManager.format_number(GameManager.get_effective_click_power())
+	cps_label.text = "CPS: %s" % GameManager.format_number(GameManager.get_effective_cps())
 	_refresh_upgrade_buttons()
 
 func _refresh_upgrade_buttons() -> void:

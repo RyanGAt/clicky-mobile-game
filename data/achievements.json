@@ -1,0 +1,44 @@
+{
+    "first_click": {
+        "name": "First Click",
+        "description": "Press the switch for the first time.",
+        "condition_type": "tap_count",
+        "condition_value": 1
+    },
+    "hundred_taps": {
+        "name": "Click 100 Times",
+        "description": "Tap the switch 100 times.",
+        "condition_type": "tap_count",
+        "condition_value": 100
+    },
+    "thousand_taps": {
+        "name": "Click 1,000 Times",
+        "description": "Tap the switch 1,000 times.",
+        "condition_type": "tap_count",
+        "condition_value": 1000
+    },
+    "ten_automatic_fingers": {
+        "name": "Own 10 Automatic Fingers",
+        "description": "Purchase 10 Automatic Finger upgrades.",
+        "condition_type": "owned_automatic_finger",
+        "condition_value": 10
+    },
+    "thousand_cps": {
+        "name": "Reach 1,000 Clicks per Second",
+        "description": "Reach a Clicks per Second of 1,000.",
+        "condition_type": "clicks_per_second",
+        "condition_value": 1000
+    },
+    "unlock_three_switches": {
+        "name": "Unlock Three Switches",
+        "description": "Unlock three different keyboard switches.",
+        "condition_type": "switches_unlocked",
+        "condition_value": 3
+    },
+    "million_clicks": {
+        "name": "Earn One Million Clicks",
+        "description": "Earn a lifetime total of one million Clicks.",
+        "condition_type": "lifetime_clicks",
+        "condition_value": 1000000
+    }
+}
