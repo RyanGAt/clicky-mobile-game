@@ -33,7 +33,9 @@ func _ready() -> void:
 	settings_button.pressed.connect(_on_settings_pressed)
 	collection_button.pressed.connect(_on_collection_pressed)
 	AchievementManager.achievement_unlocked.connect(_on_achievement_unlocked)
+	GameManager.keycap_equipped.connect(func(_id): _apply_keycap_tint())
 
+	_apply_keycap_tint()
 	_refresh_all_labels()
 	_show_offline_earnings_if_pending()
 
@@ -75,6 +77,11 @@ func _on_settings_pressed() -> void:
 
 func _on_collection_pressed() -> void:
 	popup_layer.add_child(CollectionScreenScene.instantiate())
+
+func _apply_keycap_tint() -> void:
+	var data: Dictionary = GameManager.keycaps.get(GameManager.equipped_keycap, {})
+	var hex: String = data.get("color", "#ffffff")
+	switch_button.self_modulate = Color(hex)
 
 func _on_achievement_unlocked(id: String) -> void:
 	var data: Dictionary = AchievementManager.achievements.get(id, {})

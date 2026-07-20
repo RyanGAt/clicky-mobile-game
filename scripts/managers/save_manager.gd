@@ -26,6 +26,7 @@ func _ready() -> void:
 
 	GameManager.upgrade_purchased.connect(func(_id): save_game())
 	GameManager.switch_unlocked.connect(func(_id): save_game())
+	GameManager.keycap_unlocked.connect(func(_id): save_game())
 	AchievementManager.achievement_unlocked.connect(func(_id): save_game())
 	get_tree().auto_accept_quit = false
 
@@ -48,6 +49,8 @@ func save_game() -> void:
 		"owned": GameManager.owned,
 		"unlocked_switches": GameManager.unlocked_switches,
 		"equipped_switch": GameManager.equipped_switch,
+		"unlocked_keycaps": GameManager.unlocked_keycaps,
+		"equipped_keycap": GameManager.equipped_keycap,
 		"unlocked_achievements": AchievementManager.unlocked,
 		"settings": settings,
 		"last_active_unix": Time.get_unix_time_from_system(),
@@ -84,6 +87,12 @@ func load_game() -> void:
 		GameManager.unlocked_switches = saved_unlocked_switches
 
 	GameManager.equipped_switch = String(parsed.get("equipped_switch", GameManager.equipped_switch))
+
+	var saved_unlocked_keycaps = parsed.get("unlocked_keycaps", [])
+	if saved_unlocked_keycaps is Array and saved_unlocked_keycaps.size() > 0:
+		GameManager.unlocked_keycaps = saved_unlocked_keycaps
+
+	GameManager.equipped_keycap = String(parsed.get("equipped_keycap", GameManager.equipped_keycap))
 
 	var saved_achievements = parsed.get("unlocked_achievements", [])
 	if saved_achievements is Array:

@@ -4,9 +4,12 @@ signal clicks_changed(total: float)
 signal upgrade_purchased(id: String)
 signal switch_unlocked(id: String)
 signal switch_equipped(id: String)
+signal keycap_unlocked(id: String)
+signal keycap_equipped(id: String)
 
 const UPGRADES_PATH := "res://data/upgrades.json"
 const SWITCHES_PATH := "res://data/switches.json"
+const KEYCAPS_PATH := "res://data/keycaps.json"
 
 var clicks: float = 0.0
 var lifetime_clicks: float = 0.0
@@ -24,11 +27,16 @@ var switches: Dictionary = {}
 var unlocked_switches: Array = ["office_membrane"]
 var equipped_switch: String = "office_membrane"
 
+var keycaps: Dictionary = {}
+var unlocked_keycaps: Array = ["plain_beige"]
+var equipped_keycap: String = "plain_beige"
+
 var _cps_accumulator: float = 0.0
 
 func _ready() -> void:
 	_load_upgrade_data()
 	_load_switch_data()
+	_load_keycap_data()
 
 func _process(delta: float) -> void:
 	var effective_cps := get_effective_cps()
@@ -58,11 +66,20 @@ func _load_switch_data() -> void:
 	if parsed is Dictionary:
 		switches = parsed
 
+func _load_keycap_data() -> void:
+	var file := FileAccess.open(KEYCAPS_PATH, FileAccess.READ)
+	if file == null:
+		push_error("Could not open %s" % KEYCAPS_PATH)
+		return
+	var parsed = JSON.parse_string(file.get_as_text())
+	if parsed is Dictionary:
+		keycaps = parsed
+
 func add_clicks(amount: float) -> void:
 	clicks += amount
 	lifetime_clicks += amount
 	clicks_changed.emit(clicks)
-	_check_switch_unlocks()
+	_check_unlocks()
 
 func tap() -> float:
 	var earned := get_effective_click_power()
@@ -108,7 +125,7 @@ func buy_upgrade(id: String) -> bool:
 	upgrade_purchased.emit(id)
 	return true
 
-func _check_switch_unlocks() -> void:
+func _check_unlocks() -> void:
 	for id in switches.keys():
 		if unlocked_switches.has(id):
 			continue
@@ -116,6 +133,14 @@ func _check_switch_unlocks() -> void:
 		if lifetime_clicks >= requirement:
 			unlocked_switches.append(id)
 			switch_unlocked.emit(id)
+
+	for id in keycaps.keys():
+		if unlocked_keycaps.has(id):
+			continue
+		var requirement: float = keycaps[id].get("unlock_requirement_clicks", 0.0)
+		if lifetime_clicks >= requirement:
+			unlocked_keycaps.append(id)
+			keycap_unlocked.emit(id)
 
 func is_switch_unlocked(id: String) -> bool:
 	return unlocked_switches.has(id)
@@ -125,6 +150,16 @@ func equip_switch(id: String) -> bool:
 		return false
 	equipped_switch = id
 	switch_equipped.emit(id)
+	return true
+
+func is_keycap_unlocked(id: String) -> bool:
+	return unlocked_keycaps.has(id)
+
+func equip_keycap(id: String) -> bool:
+	if not is_keycap_unlocked(id):
+		return false
+	equipped_keycap = id
+	keycap_equipped.emit(id)
 	return true
 
 func format_number(value: float) -> String:

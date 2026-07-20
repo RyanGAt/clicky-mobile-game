@@ -3,12 +3,14 @@ extends Control
 signal closed
 
 @onready var switch_list: VBoxContainer = %SwitchList
+@onready var keycap_list: VBoxContainer = %KeycapList
 @onready var achievement_list: VBoxContainer = %AchievementList
 @onready var close_button: Button = %CloseButton
 
 func _ready() -> void:
 	close_button.pressed.connect(_on_close_pressed)
 	_populate_switches()
+	_populate_keycaps()
 	_populate_achievements()
 
 func _on_close_pressed() -> void:
@@ -68,6 +70,60 @@ func _populate_switches() -> void:
 
 		switch_list.add_child(row)
 
+func _populate_keycaps() -> void:
+	for id in GameManager.keycaps.keys():
+		var data: Dictionary = GameManager.keycaps[id]
+		var unlocked := GameManager.is_keycap_unlocked(id)
+		var equipped := id == GameManager.equipped_keycap
+
+		var row := PanelContainer.new()
+		var margin := MarginContainer.new()
+		margin.add_theme_constant_override("margin_left", 20)
+		margin.add_theme_constant_override("margin_top", 16)
+		margin.add_theme_constant_override("margin_right", 20)
+		margin.add_theme_constant_override("margin_bottom", 16)
+		row.add_child(margin)
+
+		var hbox := HBoxContainer.new()
+		hbox.add_theme_constant_override("separation", 20)
+		margin.add_child(hbox)
+
+		var swatch := ColorRect.new()
+		swatch.custom_minimum_size = Vector2(48, 48)
+		swatch.color = Color(data.get("color", "#ffffff")) if unlocked else Color(0.3, 0.3, 0.3)
+		hbox.add_child(swatch)
+
+		var text_box := VBoxContainer.new()
+		text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hbox.add_child(text_box)
+
+		var title := Label.new()
+		title.add_theme_font_size_override("font_size", 28)
+		if unlocked:
+			title.text = "%s%s" % [data.get("name", id), "  (Equipped)" if equipped else ""]
+		else:
+			title.text = "??? Locked"
+		text_box.add_child(title)
+
+		var subtitle := Label.new()
+		subtitle.add_theme_font_size_override("font_size", 18)
+		subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD
+		if unlocked:
+			subtitle.text = data.get("description", "")
+		else:
+			subtitle.text = "Unlocks at %s lifetime Clicks" % GameManager.format_number(
+				data.get("unlock_requirement_clicks", 0.0)
+			)
+		text_box.add_child(subtitle)
+
+		if unlocked and not equipped:
+			var equip_button := Button.new()
+			equip_button.text = "Equip"
+			equip_button.pressed.connect(func(): _on_equip_keycap_pressed(id))
+			hbox.add_child(equip_button)
+
+		keycap_list.add_child(row)
+
 func _populate_achievements() -> void:
 	for id in AchievementManager.achievements.keys():
 		var data: Dictionary = AchievementManager.achievements[id]
@@ -100,5 +156,10 @@ func _populate_achievements() -> void:
 
 func _on_equip_pressed(id: String) -> void:
 	GameManager.equip_switch(id)
+	closed.emit()
+	queue_free()
+
+func _on_equip_keycap_pressed(id: String) -> void:
+	GameManager.equip_keycap(id)
 	closed.emit()
 	queue_free()

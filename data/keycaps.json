@@ -1,0 +1,32 @@
+{
+    "plain_beige": {
+        "name": "Plain Beige",
+        "description": "The keycap it came with.",
+        "unlock_requirement_clicks": 0,
+        "color": "#e8dcc0"
+    },
+    "retro_grey": {
+        "name": "Retro Grey",
+        "description": "A muted grey cap with a soft matte finish.",
+        "unlock_requirement_clicks": 1000,
+        "color": "#9a9a9a"
+    },
+    "transparent": {
+        "name": "Transparent",
+        "description": "See straight down to the switch housing.",
+        "unlock_requirement_clicks": 10000,
+        "color": "#cfe8ff"
+    },
+    "smiley_face": {
+        "name": "Smiley Face",
+        "description": "A cheerful yellow cap.",
+        "unlock_requirement_clicks": 50000,
+        "color": "#ffe066"
+    },
+    "golden_crown": {
+        "name": "Golden Crown",
+        "description": "A shining reward for dedicated tappers.",
+        "unlock_requirement_clicks": 250000,
+        "color": "#ffd700"
+    }
+}
