@@ -131,18 +131,29 @@ alignment = 1
 
 [node name="StrongerFingerButton" type="Button" parent="BottomPanel"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(460, 220)
+custom_minimum_size = Vector2(310, 220)
 layout_mode = 2
 autowrap_mode = 2
 text = "Stronger Finger"
 
 [node name="ButtonSpacer" type="Control" parent="BottomPanel"]
-custom_minimum_size = Vector2(30, 0)
+custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 
 [node name="AutomaticFingerButton" type="Button" parent="BottomPanel"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(460, 220)
+custom_minimum_size = Vector2(310, 220)
 layout_mode = 2
 autowrap_mode = 2
 text = "Automatic Finger"
+
+[node name="ButtonSpacer2" type="Control" parent="BottomPanel"]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="LuckyPressButton" type="Button" parent="BottomPanel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(310, 220)
+layout_mode = 2
+autowrap_mode = 2
+text = "Lucky Press"

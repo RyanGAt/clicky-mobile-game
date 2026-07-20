@@ -44,8 +44,10 @@ func save_game() -> void:
 		"clicks": GameManager.clicks,
 		"lifetime_clicks": GameManager.lifetime_clicks,
 		"tap_count": GameManager.tap_count,
+		"critical_click_count": GameManager.critical_click_count,
 		"click_power": GameManager.click_power,
 		"clicks_per_second": GameManager.clicks_per_second,
+		"critical_chance": GameManager.critical_chance,
 		"owned": GameManager.owned,
 		"unlocked_switches": GameManager.unlocked_switches,
 		"equipped_switch": GameManager.equipped_switch,
@@ -74,8 +76,10 @@ func load_game() -> void:
 	GameManager.clicks = float(parsed.get("clicks", 0.0))
 	GameManager.lifetime_clicks = float(parsed.get("lifetime_clicks", GameManager.clicks))
 	GameManager.tap_count = int(parsed.get("tap_count", 0))
+	GameManager.critical_click_count = int(parsed.get("critical_click_count", 0))
 	GameManager.click_power = float(parsed.get("click_power", 1.0))
 	GameManager.clicks_per_second = float(parsed.get("clicks_per_second", 0.0))
+	GameManager.critical_chance = float(parsed.get("critical_chance", 0.0))
 
 	var saved_owned = parsed.get("owned", {})
 	if saved_owned is Dictionary:

@@ -41,6 +41,8 @@ func _condition_met(data: Dictionary) -> bool:
 			return GameManager.tap_count >= condition_value
 		"lifetime_clicks":
 			return GameManager.lifetime_clicks >= condition_value
+		"critical_click_count":
+			return GameManager.critical_click_count >= condition_value
 		"clicks_per_second":
 			return GameManager.get_effective_cps() >= condition_value
 		"switches_unlocked":

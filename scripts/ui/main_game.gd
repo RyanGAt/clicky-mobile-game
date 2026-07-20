@@ -16,6 +16,7 @@ const CollectionScreenScene := preload("res://scenes/screens/collection_screen.t
 @onready var cps_label: Label = %CPSLabel
 @onready var stronger_finger_button: Button = %StrongerFingerButton
 @onready var automatic_finger_button: Button = %AutomaticFingerButton
+@onready var lucky_press_button: Button = %LuckyPressButton
 @onready var settings_button: Button = %SettingsButton
 @onready var collection_button: Button = %CollectionButton
 @onready var popup_layer: CanvasLayer = %PopupLayer
@@ -30,6 +31,7 @@ func _ready() -> void:
 	switch_button.button_up.connect(_on_switch_released)
 	stronger_finger_button.pressed.connect(func(): _buy("stronger_finger"))
 	automatic_finger_button.pressed.connect(func(): _buy("automatic_finger"))
+	lucky_press_button.pressed.connect(func(): _buy("lucky_press"))
 	settings_button.pressed.connect(_on_settings_pressed)
 	collection_button.pressed.connect(_on_collection_pressed)
 	AchievementManager.achievement_unlocked.connect(_on_achievement_unlocked)
@@ -44,11 +46,11 @@ func _process(_delta: float) -> void:
 	_refresh_upgrade_buttons()
 
 func _on_switch_pressed() -> void:
-	var earned := GameManager.tap()
+	var result := GameManager.tap()
 	_play_press_animation()
 	_play_tap_sound()
 	_play_tap_vibration()
-	_spawn_floating_text(earned)
+	_spawn_floating_text(result["amount"], result["is_crit"])
 
 func _on_switch_released() -> void:
 	pass
@@ -111,10 +113,12 @@ func _show_offline_earnings_if_pending() -> void:
 	popup_layer.add_child(popup)
 	popup.setup(offline["earnings"], offline["seconds"])
 
-func _spawn_floating_text(amount: float) -> void:
+func _spawn_floating_text(amount: float, is_crit: bool) -> void:
 	var label := Label.new()
-	label.text = "+%s" % GameManager.format_number(amount)
-	label.add_theme_font_size_override("font_size", 48)
+	var formatted_amount := GameManager.format_number(amount)
+	label.text = "CRIT! +%s" % formatted_amount if is_crit else "+%s" % formatted_amount
+	label.add_theme_font_size_override("font_size", 64 if is_crit else 48)
+	label.add_theme_color_override("font_color", Color("#ffd700") if is_crit else Color.WHITE)
 	var start_pos := switch_button.global_position + switch_button.size / 2.0
 	start_pos += Vector2(randf_range(-40.0, 40.0), -20.0)
 	label.global_position = start_pos
@@ -144,6 +148,7 @@ func _refresh_all_labels() -> void:
 func _refresh_upgrade_buttons() -> void:
 	_refresh_upgrade_button(stronger_finger_button, "stronger_finger")
 	_refresh_upgrade_button(automatic_finger_button, "automatic_finger")
+	_refresh_upgrade_button(lucky_press_button, "lucky_press")
 
 func _refresh_upgrade_button(button: Button, id: String) -> void:
 	var data: Dictionary = GameManager.upgrades.get(id, {})

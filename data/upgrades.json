@@ -12,5 +12,12 @@
         "base_cost": 50,
         "growth_rate": 1.12,
         "cps_bonus": 0.5
+    },
+    "lucky_press": {
+        "name": "Lucky Press",
+        "description": "+5% chance for a Critical Click (3x Clicks)",
+        "base_cost": 200,
+        "growth_rate": 1.2,
+        "crit_chance_bonus": 0.05
     }
 }

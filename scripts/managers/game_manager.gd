@@ -11,11 +11,15 @@ const UPGRADES_PATH := "res://data/upgrades.json"
 const SWITCHES_PATH := "res://data/switches.json"
 const KEYCAPS_PATH := "res://data/keycaps.json"
 
+const CRITICAL_CLICK_MULTIPLIER := 3.0
+
 var clicks: float = 0.0
 var lifetime_clicks: float = 0.0
 var tap_count: int = 0
+var critical_click_count: int = 0
 var click_power: float = 1.0
 var clicks_per_second: float = 0.0
+var critical_chance: float = 0.0
 
 var upgrades: Dictionary = {}
 var owned: Dictionary = {
@@ -81,11 +85,15 @@ func add_clicks(amount: float) -> void:
 	clicks_changed.emit(clicks)
 	_check_unlocks()
 
-func tap() -> float:
+func tap() -> Dictionary:
 	var earned := get_effective_click_power()
+	var is_crit := randf() < critical_chance
+	if is_crit:
+		earned *= CRITICAL_CLICK_MULTIPLIER
+		critical_click_count += 1
 	tap_count += 1
 	add_clicks(earned)
-	return earned
+	return {"amount": earned, "is_crit": is_crit}
 
 func get_equipped_switch_data() -> Dictionary:
 	return switches.get(equipped_switch, {})
@@ -120,6 +128,8 @@ func buy_upgrade(id: String) -> bool:
 		click_power += float(data["click_power_bonus"])
 	if data.has("cps_bonus"):
 		clicks_per_second += float(data["cps_bonus"])
+	if data.has("crit_chance_bonus"):
+		critical_chance = clampf(critical_chance + float(data["crit_chance_bonus"]), 0.0, 1.0)
 
 	clicks_changed.emit(clicks)
 	upgrade_purchased.emit(id)

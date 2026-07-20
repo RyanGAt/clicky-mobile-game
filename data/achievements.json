@@ -40,5 +40,11 @@
         "description": "Earn a lifetime total of one million Clicks.",
         "condition_type": "lifetime_clicks",
         "condition_value": 1000000
+    },
+    "hundred_crits": {
+        "name": "Trigger 100 Critical Clicks",
+        "description": "Land 100 Critical Clicks.",
+        "condition_type": "critical_click_count",
+        "condition_value": 100
     }
 }
