@@ -2,6 +2,10 @@ extends Control
 
 const FLOAT_TEXT_SCENE_DURATION := 0.6
 const TAP_SCALE := 0.92
+const TAP_VIBRATION_MS := 15
+
+const SettingsScreenScene := preload("res://scenes/screens/settings_screen.tscn")
+const OfflineEarningsPopupScene := preload("res://scenes/screens/offline_earnings_popup.tscn")
 
 @onready var switch_button: Button = %SwitchButton
 @onready var switch_audio: AudioStreamPlayer = %SwitchAudio
@@ -11,6 +15,8 @@ const TAP_SCALE := 0.92
 @onready var cps_label: Label = %CPSLabel
 @onready var stronger_finger_button: Button = %StrongerFingerButton
 @onready var automatic_finger_button: Button = %AutomaticFingerButton
+@onready var settings_button: Button = %SettingsButton
+@onready var popup_layer: CanvasLayer = %PopupLayer
 
 var _tap_tween: Tween
 
@@ -22,8 +28,10 @@ func _ready() -> void:
 	switch_button.button_up.connect(_on_switch_released)
 	stronger_finger_button.pressed.connect(func(): _buy("stronger_finger"))
 	automatic_finger_button.pressed.connect(func(): _buy("automatic_finger"))
+	settings_button.pressed.connect(_on_settings_pressed)
 
 	_refresh_all_labels()
+	_show_offline_earnings_if_pending()
 
 func _process(_delta: float) -> void:
 	cps_label.text = "CPS: %s" % GameManager.format_number(GameManager.clicks_per_second)
@@ -33,6 +41,7 @@ func _on_switch_pressed() -> void:
 	var earned := GameManager.tap()
 	_play_press_animation()
 	_play_tap_sound()
+	_play_tap_vibration()
 	_spawn_floating_text(earned)
 
 func _on_switch_released() -> void:
@@ -52,6 +61,21 @@ func _play_tap_sound() -> void:
 		return
 	switch_audio.pitch_scale = randf_range(0.95, 1.05)
 	switch_audio.play()
+
+func _play_tap_vibration() -> void:
+	if SaveManager.settings.get("vibration_enabled", true):
+		Input.vibrate_handheld(TAP_VIBRATION_MS)
+
+func _on_settings_pressed() -> void:
+	popup_layer.add_child(SettingsScreenScene.instantiate())
+
+func _show_offline_earnings_if_pending() -> void:
+	var offline := SaveManager.consume_pending_offline_earnings()
+	if offline["earnings"] <= 0.0:
+		return
+	var popup: Control = OfflineEarningsPopupScene.instantiate()
+	popup_layer.add_child(popup)
+	popup.setup(offline["earnings"], offline["seconds"])
 
 func _spawn_floating_text(amount: float) -> void:
 	var label := Label.new()

@@ -77,6 +77,20 @@ text = "TAP"
 unique_name_in_owner = true
 bus = &"Master"
 
+[node name="SettingsButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -160.0
+offset_top = 60.0
+offset_right = -40.0
+offset_bottom = 140.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 24
+text = "Settings"
+
 [node name="FloatingTextLayer" type="Control" parent="."]
 unique_name_in_owner = true
 layout_mode = 1
@@ -86,6 +100,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="PopupLayer" type="CanvasLayer" parent="."]
+unique_name_in_owner = true
 
 [node name="BottomPanel" type="HBoxContainer" parent="."]
 layout_mode = 1
