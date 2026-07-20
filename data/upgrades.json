@@ -1,0 +1,16 @@
+{
+    "stronger_finger": {
+        "name": "Stronger Finger",
+        "description": "+1 Click per Tap",
+        "base_cost": 10,
+        "growth_rate": 1.15,
+        "click_power_bonus": 1
+    },
+    "automatic_finger": {
+        "name": "Automatic Finger",
+        "description": "+0.5 Clicks per Second",
+        "base_cost": 50,
+        "growth_rate": 1.12,
+        "cps_bonus": 0.5
+    }
+}
