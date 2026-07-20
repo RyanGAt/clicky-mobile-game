@@ -22,6 +22,7 @@ const CollectionScreenScene := preload("res://scenes/screens/collection_screen.t
 @onready var popup_layer: CanvasLayer = %PopupLayer
 
 var _tap_tween: Tween
+var _onboarding_hint: Label
 
 func _ready() -> void:
 	GameManager.clicks_changed.connect(_on_clicks_changed)
@@ -40,6 +41,7 @@ func _ready() -> void:
 	_apply_keycap_tint()
 	_refresh_all_labels()
 	_show_offline_earnings_if_pending()
+	_show_onboarding_hint_if_first_launch()
 
 func _process(_delta: float) -> void:
 	cps_label.text = "CPS: %s" % GameManager.format_number(GameManager.get_effective_cps())
@@ -51,6 +53,7 @@ func _on_switch_pressed() -> void:
 	_play_tap_sound()
 	_play_tap_vibration()
 	_spawn_floating_text(result["amount"], result["is_crit"])
+	_dismiss_onboarding_hint()
 
 func _on_switch_released() -> void:
 	pass
@@ -112,6 +115,29 @@ func _show_offline_earnings_if_pending() -> void:
 	var popup: Control = OfflineEarningsPopupScene.instantiate()
 	popup_layer.add_child(popup)
 	popup.setup(offline["earnings"], offline["seconds"])
+
+func _show_onboarding_hint_if_first_launch() -> void:
+	if GameManager.tap_count > 0:
+		return
+	_onboarding_hint = Label.new()
+	_onboarding_hint.text = "Tap the switch to earn Clicks!"
+	_onboarding_hint.add_theme_font_size_override("font_size", 32)
+	_onboarding_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_onboarding_hint.anchor_left = 0.5
+	_onboarding_hint.anchor_right = 0.5
+	_onboarding_hint.position = Vector2(-260, 220)
+	_onboarding_hint.size = Vector2(520, 60)
+	_onboarding_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	floating_text_layer.add_child(_onboarding_hint)
+
+func _dismiss_onboarding_hint() -> void:
+	if _onboarding_hint == null:
+		return
+	var hint := _onboarding_hint
+	_onboarding_hint = null
+	var tween := create_tween()
+	tween.tween_property(hint, "modulate:a", 0.0, 0.3)
+	tween.tween_callback(hint.queue_free)
 
 func _spawn_floating_text(amount: float, is_crit: bool) -> void:
 	var label := Label.new()
