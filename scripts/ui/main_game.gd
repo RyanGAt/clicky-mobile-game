@@ -27,6 +27,7 @@ var _onboarding_hint: Label
 func _ready() -> void:
 	GameManager.clicks_changed.connect(_on_clicks_changed)
 	GameManager.upgrade_purchased.connect(_on_upgrade_purchased)
+	GameManager.switch_equipped.connect(func(_id): _refresh_all_labels())
 
 	switch_button.button_down.connect(_on_switch_pressed)
 	switch_button.button_up.connect(_on_switch_released)
@@ -52,20 +53,29 @@ func _on_switch_pressed() -> void:
 	_play_press_animation()
 	_play_tap_sound()
 	_play_tap_vibration()
-	_spawn_floating_text(result["amount"], result["is_crit"])
+	_spawn_floating_text(float(result["amount"]), bool(result["is_crit"]))
 	_dismiss_onboarding_hint()
 
 func _on_switch_released() -> void:
-	pass
+	_play_release_animation()
 
 func _play_press_animation() -> void:
-	if _tap_tween:
+	if _tap_tween and _tap_tween.is_valid():
 		_tap_tween.kill()
 	switch_button.pivot_offset = switch_button.size / 2.0
-	switch_button.scale = Vector2.ONE
 	_tap_tween = create_tween()
-	_tap_tween.tween_property(switch_button, "scale", Vector2(TAP_SCALE, TAP_SCALE), 0.05)
-	_tap_tween.tween_property(switch_button, "scale", Vector2.ONE, 0.12)
+	_tap_tween.set_trans(Tween.TRANS_QUAD)
+	_tap_tween.set_ease(Tween.EASE_OUT)
+	_tap_tween.tween_property(switch_button, "scale", Vector2(TAP_SCALE, TAP_SCALE), 0.035)
+
+func _play_release_animation() -> void:
+	if _tap_tween and _tap_tween.is_valid():
+		_tap_tween.kill()
+	switch_button.pivot_offset = switch_button.size / 2.0
+	_tap_tween = create_tween()
+	_tap_tween.set_trans(Tween.TRANS_BACK)
+	_tap_tween.set_ease(Tween.EASE_OUT)
+	_tap_tween.tween_property(switch_button, "scale", Vector2.ONE, 0.11)
 
 func _play_tap_sound() -> void:
 	if switch_audio.stream == null:
@@ -92,15 +102,24 @@ func _on_achievement_unlocked(id: String) -> void:
 	var data: Dictionary = AchievementManager.achievements.get(id, {})
 	_spawn_toast("Achievement Unlocked: %s" % data.get("name", id))
 
-func _spawn_toast(message: String) -> void:
+func _make_centered_overlay_label(text: String, font_size: int, top_ratio: float) -> Label:
 	var label := Label.new()
-	label.text = message
-	label.add_theme_font_size_override("font_size", 32)
+	label.text = text
+	label.add_theme_font_size_override("font_size", font_size)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.anchor_left = 0.5
-	label.anchor_right = 0.5
-	label.position = Vector2(-260, 220)
-	label.size = Vector2(520, 60)
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	label.anchor_top = top_ratio
+	label.anchor_bottom = top_ratio
+	label.offset_left = 40.0
+	label.offset_right = -40.0
+	label.offset_top = -35.0
+	label.offset_bottom = 35.0
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
+
+func _spawn_toast(message: String) -> void:
+	var label := _make_centered_overlay_label(message, 32, 0.18)
 	floating_text_layer.add_child(label)
 
 	var tween := create_tween()
@@ -110,24 +129,16 @@ func _spawn_toast(message: String) -> void:
 
 func _show_offline_earnings_if_pending() -> void:
 	var offline := SaveManager.consume_pending_offline_earnings()
-	if offline["earnings"] <= 0.0:
+	if float(offline["earnings"]) <= 0.0:
 		return
 	var popup: Control = OfflineEarningsPopupScene.instantiate()
 	popup_layer.add_child(popup)
-	popup.setup(offline["earnings"], offline["seconds"])
+	popup.setup(float(offline["earnings"]), float(offline["seconds"]))
 
 func _show_onboarding_hint_if_first_launch() -> void:
 	if GameManager.tap_count > 0:
 		return
-	_onboarding_hint = Label.new()
-	_onboarding_hint.text = "Tap the switch to earn Clicks!"
-	_onboarding_hint.add_theme_font_size_override("font_size", 32)
-	_onboarding_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_onboarding_hint.anchor_left = 0.5
-	_onboarding_hint.anchor_right = 0.5
-	_onboarding_hint.position = Vector2(-260, 220)
-	_onboarding_hint.size = Vector2(520, 60)
-	_onboarding_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_onboarding_hint = _make_centered_overlay_label("Tap the switch to earn Clicks!", 32, 0.30)
 	floating_text_layer.add_child(_onboarding_hint)
 
 func _dismiss_onboarding_hint() -> void:
@@ -145,6 +156,7 @@ func _spawn_floating_text(amount: float, is_crit: bool) -> void:
 	label.text = "CRIT! +%s" % formatted_amount if is_crit else "+%s" % formatted_amount
 	label.add_theme_font_size_override("font_size", 64 if is_crit else 48)
 	label.add_theme_color_override("font_color", Color("#ffd700") if is_crit else Color.WHITE)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var start_pos := switch_button.global_position + switch_button.size / 2.0
 	start_pos += Vector2(randf_range(-40.0, 40.0), -20.0)
 	label.global_position = start_pos
@@ -154,7 +166,8 @@ func _spawn_floating_text(amount: float, is_crit: bool) -> void:
 	tween.set_parallel(true)
 	tween.tween_property(label, "global_position:y", start_pos.y - 120.0, FLOAT_TEXT_SCENE_DURATION)
 	tween.tween_property(label, "modulate:a", 0.0, FLOAT_TEXT_SCENE_DURATION)
-	tween.chain().tween_callback(label.queue_free)
+	tween.set_parallel(false)
+	tween.tween_callback(label.queue_free)
 
 func _buy(id: String) -> void:
 	GameManager.buy_upgrade(id)
@@ -169,6 +182,8 @@ func _refresh_all_labels() -> void:
 	clicks_label.text = GameManager.format_number(GameManager.clicks)
 	cpt_label.text = "Per Tap: %s" % GameManager.format_number(GameManager.get_effective_click_power())
 	cps_label.text = "CPS: %s" % GameManager.format_number(GameManager.get_effective_cps())
+	var switch_data := GameManager.get_equipped_switch_data()
+	switch_button.text = "%s\nTAP" % switch_data.get("name", "Switch")
 	_refresh_upgrade_buttons()
 
 func _refresh_upgrade_buttons() -> void:
