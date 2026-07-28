@@ -26,7 +26,9 @@ func _ready() -> void:
 
 	GameManager.upgrade_purchased.connect(func(_id): save_game())
 	GameManager.switch_unlocked.connect(func(_id): save_game())
+	GameManager.switch_equipped.connect(func(_id): save_game())
 	GameManager.keycap_unlocked.connect(func(_id): save_game())
+	GameManager.keycap_equipped.connect(func(_id): save_game())
 	AchievementManager.achievement_unlocked.connect(func(_id): save_game())
 	get_tree().auto_accept_quit = false
 
@@ -59,44 +61,73 @@ func save_game() -> void:
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
-		push_error("Could not write save file")
+		push_error("Could not write save file: %s" % FileAccess.get_open_error())
 		return
 	file.store_string(JSON.stringify(data))
 
 func load_game() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
 		return
+
 	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if file == null:
-		return
-	var parsed = JSON.parse_string(file.get_as_text())
-	if not (parsed is Dictionary):
+		push_warning("Could not open save file: %s" % FileAccess.get_open_error())
 		return
 
-	GameManager.clicks = float(parsed.get("clicks", 0.0))
-	GameManager.lifetime_clicks = float(parsed.get("lifetime_clicks", GameManager.clicks))
-	GameManager.tap_count = int(parsed.get("tap_count", 0))
-	GameManager.critical_click_count = int(parsed.get("critical_click_count", 0))
-	GameManager.click_power = float(parsed.get("click_power", 1.0))
-	GameManager.clicks_per_second = float(parsed.get("clicks_per_second", 0.0))
-	GameManager.critical_chance = float(parsed.get("critical_chance", 0.0))
+	var raw_text := file.get_as_text()
+	var json := JSON.new()
+	var parse_error := json.parse(raw_text)
+	if parse_error != OK:
+		push_warning("Save file contains invalid JSON at line %d: %s. Starting safely without overwriting it." % [json.get_error_line(), json.get_error_message()])
+		return
+
+	var parsed = json.data
+	if not (parsed is Dictionary):
+		push_warning("Save file root is not a dictionary. Starting safely without overwriting it.")
+		return
+
+	var saved_version := int(parsed.get("version", 0))
+	if saved_version > SAVE_VERSION:
+		push_warning("Save version %d is newer than supported version %d. Starting safely without overwriting it." % [saved_version, SAVE_VERSION])
+		return
+	if saved_version < SAVE_VERSION:
+		push_warning("Loading older save version %d with compatibility defaults." % saved_version)
+
+	GameManager.clicks = maxf(float(parsed.get("clicks", 0.0)), 0.0)
+	GameManager.lifetime_clicks = maxf(float(parsed.get("lifetime_clicks", GameManager.clicks)), GameManager.clicks)
+	GameManager.tap_count = maxi(int(parsed.get("tap_count", 0)), 0)
+	GameManager.critical_click_count = maxi(int(parsed.get("critical_click_count", 0)), 0)
+	GameManager.click_power = maxf(float(parsed.get("click_power", 1.0)), 1.0)
+	GameManager.clicks_per_second = maxf(float(parsed.get("clicks_per_second", 0.0)), 0.0)
+	GameManager.critical_chance = clampf(float(parsed.get("critical_chance", 0.0)), 0.0, 1.0)
 
 	var saved_owned = parsed.get("owned", {})
 	if saved_owned is Dictionary:
 		for id in saved_owned.keys():
-			GameManager.owned[id] = int(saved_owned[id])
+			if GameManager.upgrades.has(id):
+				GameManager.owned[id] = maxi(int(saved_owned[id]), 0)
 
 	var saved_unlocked_switches = parsed.get("unlocked_switches", [])
-	if saved_unlocked_switches is Array and saved_unlocked_switches.size() > 0:
-		GameManager.unlocked_switches = saved_unlocked_switches
+	if saved_unlocked_switches is Array:
+		var valid_switches: Array = ["office_membrane"]
+		for id in saved_unlocked_switches:
+			if GameManager.switches.has(String(id)) and not valid_switches.has(String(id)):
+				valid_switches.append(String(id))
+		GameManager.unlocked_switches = valid_switches
 
-	GameManager.equipped_switch = String(parsed.get("equipped_switch", GameManager.equipped_switch))
+	var requested_switch := String(parsed.get("equipped_switch", "office_membrane"))
+	GameManager.equipped_switch = requested_switch if GameManager.unlocked_switches.has(requested_switch) else "office_membrane"
 
 	var saved_unlocked_keycaps = parsed.get("unlocked_keycaps", [])
-	if saved_unlocked_keycaps is Array and saved_unlocked_keycaps.size() > 0:
-		GameManager.unlocked_keycaps = saved_unlocked_keycaps
+	if saved_unlocked_keycaps is Array:
+		var valid_keycaps: Array = ["plain_beige"]
+		for id in saved_unlocked_keycaps:
+			if GameManager.keycaps.has(String(id)) and not valid_keycaps.has(String(id)):
+				valid_keycaps.append(String(id))
+		GameManager.unlocked_keycaps = valid_keycaps
 
-	GameManager.equipped_keycap = String(parsed.get("equipped_keycap", GameManager.equipped_keycap))
+	var requested_keycap := String(parsed.get("equipped_keycap", "plain_beige"))
+	GameManager.equipped_keycap = requested_keycap if GameManager.unlocked_keycaps.has(requested_keycap) else "plain_beige"
 
 	var saved_achievements = parsed.get("unlocked_achievements", [])
 	if saved_achievements is Array:
@@ -104,15 +135,15 @@ func load_game() -> void:
 
 	var saved_settings = parsed.get("settings", {})
 	if saved_settings is Dictionary:
-		for key in saved_settings.keys():
-			settings[key] = saved_settings[key]
+		settings["master_volume"] = clampf(float(saved_settings.get("master_volume", 1.0)), 0.0, 1.0)
+		settings["vibration_enabled"] = bool(saved_settings.get("vibration_enabled", true))
 
-	var last_active: float = float(parsed.get("last_active_unix", 0.0))
-	if last_active > 0.0 and GameManager.clicks_per_second > 0.0:
-		var elapsed: float = clampf(Time.get_unix_time_from_system() - last_active, 0.0, MAX_OFFLINE_SECONDS)
+	var last_active := float(parsed.get("last_active_unix", 0.0))
+	if last_active > 0.0 and GameManager.get_effective_cps() > 0.0:
+		var elapsed := clampf(Time.get_unix_time_from_system() - last_active, 0.0, MAX_OFFLINE_SECONDS)
 		if elapsed > 1.0:
 			pending_offline_seconds = elapsed
-			pending_offline_earnings = elapsed * GameManager.clicks_per_second * OFFLINE_EFFICIENCY
+			pending_offline_earnings = elapsed * GameManager.get_effective_cps() * OFFLINE_EFFICIENCY
 			GameManager.add_clicks(pending_offline_earnings)
 
 func consume_pending_offline_earnings() -> Dictionary:
@@ -135,6 +166,9 @@ func set_vibration_enabled(enabled: bool) -> void:
 
 func _apply_audio_settings() -> void:
 	var bus_index := AudioServer.get_bus_index("Master")
+	if bus_index < 0:
+		push_warning("Master audio bus is unavailable.")
+		return
 	var volume: float = settings.get("master_volume", 1.0)
 	AudioServer.set_bus_volume_db(bus_index, linear_to_db(maxf(volume, 0.0001)))
 	AudioServer.set_bus_mute(bus_index, volume <= 0.0001)
