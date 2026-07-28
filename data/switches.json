@@ -2,61 +2,23 @@
     "office_membrane": {
         "name": "Office Membrane",
         "tier": 1,
-        "description": "Cheap plastic appearance, dull sound, slow rebound.",
+        "description": "Cheap plastic, a dull press, and your first Click.",
         "unlock_requirement_clicks": 0,
         "click_power_multiplier": 1.0,
         "cps_multiplier": 1.0,
-        "color": "#8a8a8a",
-        "sound_category": "membrane"
+        "color": "#d9cfb5",
+        "sound_category": "membrane",
+        "asset_path": "res://assets/switches/office_membrane.png"
     },
     "budget_linear": {
         "name": "Budget Linear",
         "tier": 2,
-        "description": "Smooth red switch with a softer sound and improved tap value.",
+        "description": "A smoother red switch with stronger taps and passive output.",
         "unlock_requirement_clicks": 500,
         "click_power_multiplier": 1.5,
         "cps_multiplier": 1.2,
-        "color": "#c0392b",
-        "sound_category": "linear"
-    },
-    "scratchy_tactile": {
-        "name": "Scratchy Tactile",
-        "tier": 3,
-        "description": "Brown switch with a tactile bump and better critical-click chance.",
-        "unlock_requirement_clicks": 5000,
-        "click_power_multiplier": 2.2,
-        "cps_multiplier": 1.5,
-        "color": "#8d5524",
-        "sound_category": "tactile"
-    },
-    "deafening_clicky": {
-        "name": "Deafening Clicky",
-        "tier": 4,
-        "description": "Blue switch with a loud click and a high manual tap bonus.",
-        "unlock_requirement_clicks": 25000,
-        "click_power_multiplier": 3.2,
-        "cps_multiplier": 1.8,
-        "color": "#2980b9",
-        "sound_category": "clicky"
-    },
-    "creamy_linear": {
-        "name": "Creamy Linear",
-        "tier": 5,
-        "description": "Smooth premium sound with higher automatic income.",
-        "unlock_requirement_clicks": 100000,
-        "click_power_multiplier": 4.0,
-        "cps_multiplier": 3.0,
-        "color": "#f5deb3",
-        "sound_category": "linear"
-    },
-    "heavy_tactile": {
-        "name": "Heavy Tactile",
-        "tier": 6,
-        "description": "Slower animation with a strong manual-click multiplier.",
-        "unlock_requirement_clicks": 500000,
-        "click_power_multiplier": 6.0,
-        "cps_multiplier": 3.5,
-        "color": "#2c2c2c",
-        "sound_category": "tactile"
+        "color": "#f2b4a8",
+        "sound_category": "linear",
+        "asset_path": "res://assets/switches/budget_linear.png"
     }
 }
