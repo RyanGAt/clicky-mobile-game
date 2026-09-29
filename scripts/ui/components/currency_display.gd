@@ -34,7 +34,8 @@ func _ready() -> void:
 
 	_target = GameManager.clicks
 	_shown = _target
-	GameManager.clicks_changed.connect(func(total): _target = total)
+	_last_total = _target
+	GameManager.clicks_changed.connect(_on_total_changed)
 	GameManager.stats_changed.connect(refresh_stats)
 	GameManager.switch_equipped.connect(func(_id): refresh_stats())
 	refresh_stats()
@@ -58,6 +59,30 @@ func _add_stat(parent: Control, caption: String) -> Label:
 	row.add_child(value)
 	row.add_child(UIStyle.label(caption, 28, UIStyle.TEXT_DIM, 600))
 	return value
+
+var _last_total := 0.0
+
+## Spending shows a brief "-cost" under the counter; big spends (>25% of the
+## balance) also dip the number so the drop is felt rather than just seen.
+func _on_total_changed(total: float) -> void:
+	var spent := _last_total - total
+	_last_total = total
+	_target = total
+	if spent <= 0.0 or not is_inside_tree():
+		return
+	var l := UIStyle.label("-%s" % GameManager.format_number(spent), 34, Color("#e8907f"), 800)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	get_parent().add_child(l)
+	l.size = Vector2(size.x, 40)
+	l.position = Vector2(position.x, _value_label.position.y + _value_label.size.y - 10.0)
+	var tw := l.create_tween().set_parallel(true)
+	tw.tween_property(l, "position:y", l.position.y + 40.0, 0.7).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.tween_property(l, "modulate:a", 0.0, 0.7).set_delay(0.2)
+	tw.chain().tween_callback(l.queue_free)
+	if spent > (total + spent) * 0.25:
+		_value_label.pivot_offset = _value_label.size * 0.5
+		_value_label.scale = Vector2(0.92, 0.92)
+		_value_label.create_tween().tween_property(_value_label, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func refresh_stats() -> void:
 	_tap_value.text = GameManager.format_number(GameManager.get_effective_click_power())

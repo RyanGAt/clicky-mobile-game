@@ -45,6 +45,9 @@ func _ready() -> void:
 	title_row.add_child(UIStyle.label(data.get("name", upgrade_id), 36, UIStyle.TEXT, 800))
 	_level = UIStyle.label("", 28, UIStyle.TEXT_FAINT, 700)
 	title_row.add_child(_level)
+	var path := str(data.get("path", ""))
+	if UIStyle.PATH_COLORS.has(path):
+		title_row.add_child(UIStyle.tag(path, UIStyle.PATH_COLORS[path]))
 
 	var desc := UIStyle.label(data.get("description", ""), 26, UIStyle.TEXT_DIM, 500)
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -52,6 +55,10 @@ func _ready() -> void:
 	_benefit = UIStyle.label("", 26, UIStyle.POSITIVE, 700)
 	_benefit.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.add_child(_benefit)
+	if data.has("flavor"):
+		var flavor := UIStyle.label("\u201c%s\u201d" % data["flavor"], 22, UIStyle.TEXT_FAINT, 500)
+		flavor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		text.add_child(flavor)
 
 	_button = Button.new()
 	_button.custom_minimum_size = Vector2(210, 124)
@@ -90,6 +97,10 @@ func _describe_benefit() -> String:
 			text = ("+%s per tap · next +%s" % [n.call(b["total"]), n.call(b["per_level"])]) if owned > 0 else "+%s per tap each" % n.call(b["per_level"])
 		"cps_bonus":
 			text = ("+%s per sec · next +%s" % [n.call(b["total"]), n.call(b["per_level"])]) if owned > 0 else "+%s per sec each" % n.call(b["per_level"])
+		"tap_percent_bonus":
+			text = "+%d%% tap power · next +%d%%" % [roundi(b["total"] * 100.0), roundi(b["per_level"] * 100.0)]
+		"global_percent_bonus":
+			text = "+%d%% taps & passive · next +%d%%" % [roundi(b["total"] * 100.0), roundi(b["per_level"] * 100.0)]
 		"crit_chance_bonus":
 			text = "%d%% crit chance · crits x%s" % [roundi(GameManager.get_crit_chance() * 100.0), n.call(GameManager.get_crit_multiplier())]
 	var data: Dictionary = GameManager.upgrades.get(upgrade_id, {})

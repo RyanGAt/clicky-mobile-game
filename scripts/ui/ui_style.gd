@@ -104,3 +104,46 @@ static func build_theme() -> Theme:
 	t.set_stylebox("grabber_area", "HSlider", box(TEXT_DIM, 8, 8))
 	t.set_stylebox("grabber_area_highlight", "HSlider", box(TEXT, 8, 8))
 	return t
+
+## Artwork for a switch. Switches without final art declare a "placeholder"
+## (an existing image plus a tint) so the UI can label it as temporary.
+static func switch_art(id: String) -> Dictionary:
+	var data: Dictionary = GameManager.switches.get(id, {})
+	var path := str(data.get("asset_path", ""))
+	if path != "" and ResourceLoader.exists(path):
+		return {"texture": load(path), "tint": Color.WHITE, "placeholder": false}
+	var ph: Dictionary = data.get("placeholder", {})
+	var base := str(ph.get("base", ""))
+	if base != "" and ResourceLoader.exists(base):
+		return {"texture": load(base), "tint": Color(ph.get("tint", "#ffffff")), "placeholder": true}
+	push_warning("No artwork or placeholder for switch '%s'" % id)
+	return {"texture": null, "tint": Color.WHITE, "placeholder": true}
+
+## Small uppercase tag used for "TAP / PASSIVE / HYBRID" and "TEMP ART".
+static func tag(text: String, color: Color) -> PanelContainer:
+	var p := PanelContainer.new()
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sb := box(Color(color, 0.14), 12)
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
+	p.add_theme_stylebox_override("panel", sb)
+	p.add_child(label(text.to_upper(), 19, color, 800))
+	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return p
+
+const PATH_COLORS := {"tap": Color("#f0a868"), "passive": Color("#7fc4e8"), "hybrid": Color("#c9a6f0")}
+
+## Row of mastery pips (filled = reached).
+static func mastery_pips(level: int, total: int, color: Color, pip: float = 18.0) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for i in total:
+		var dot := Panel.new()
+		dot.custom_minimum_size = Vector2(pip, pip)
+		dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		dot.add_theme_stylebox_override("panel", box(color if i < level else Color(1, 1, 1, 0.1), int(pip / 2.0)))
+		row.add_child(dot)
+	return row

@@ -45,7 +45,7 @@ func refresh() -> void:
 	if state == _last_state:
 		return
 	_last_state = state
-	_art.set_art_modulate(Color.WHITE if unlocked else Color(0.08, 0.08, 0.09, 0.9))
+	_art.set_locked(not unlocked)
 	_button.visible = unlocked
 	_button.disabled = equipped
 	_button.text = "Equipped" if equipped else "Equip"
@@ -53,4 +53,4 @@ func refresh() -> void:
 		UIStyle.style_button(_button, Color(UIStyle.POSITIVE, 0.14), UIStyle.POSITIVE, 20)
 	else:
 		UIStyle.style_button(_button, UIStyle.SURFACE_3, UIStyle.TEXT, 20)
-	_status.text = data.get("description", "") if unlocked else "Unlocks at %s lifetime Clicks" % GameManager.format_number(float(data.get("unlock_requirement_clicks", 0)))
+	_status.text = str(data.get("flavor", data.get("description", ""))) if unlocked else "Unlocks at %s lifetime Clicks" % GameManager.format_number(float(data.get("unlock_requirement_clicks", 0)))

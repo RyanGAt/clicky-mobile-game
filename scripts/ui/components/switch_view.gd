@@ -98,8 +98,9 @@ func _ready() -> void:
 	resized.connect(_layout_art)
 	_layout_art()
 
-func set_switch_texture(texture: Texture2D, new_accent: Color, animate: bool = true) -> void:
+func set_switch_texture(texture: Texture2D, new_accent: Color, animate: bool = true, tint: Color = Color.WHITE) -> void:
 	_art.texture = texture
+	_art.modulate = tint
 	accent = new_accent
 	_particles.color = accent.lightened(0.2)
 	if animate:
@@ -167,9 +168,22 @@ func _on_touch_up() -> void:
 # --- Feedback ---------------------------------------------------------------
 
 ## Called by the owner after the economy resolves the tap.
-func show_tap_result(text: String, is_crit: bool, pos: Vector2) -> void:
-	_spawn_float(text, is_crit, pos)
-	if is_crit:
+## kind: "normal", "crit", "perfect"; `hot` tints numbers during a Hot Streak.
+func show_tap_result(text: String, is_crit: bool, pos: Vector2, kind: String = "", hot: bool = false) -> void:
+	if kind == "":
+		kind = "crit" if is_crit else "normal"
+	_spawn_float(text, kind, pos, hot)
+	if kind == "perfect":
+		_ring_age = -0.12 # hold the ring a moment longer
+		_ring_color = Color.WHITE
+		_pop = maxf(_pop, 0.12)
+		_depth = 1.15
+		_particles.amount = 36
+		_particles.color = Color.WHITE
+		_particles.restart()
+		_particles.emitting = true
+		_particles_reset_pending = true
+	elif is_crit:
 		_ring_age = 0.0
 		_ring_color = Color("#ffd35a")
 		_pop = maxf(_pop, 0.07)
@@ -180,13 +194,19 @@ func show_tap_result(text: String, is_crit: bool, pos: Vector2) -> void:
 func pulse(amount: float = 0.06) -> void:
 	_pop = maxf(_pop, amount)
 
-func _spawn_float(text: String, is_crit: bool, pos: Vector2) -> void:
+var _particles_reset_pending := false
+
+func _spawn_float(text: String, kind: String, pos: Vector2, hot: bool) -> void:
+	var is_crit := kind != "normal"
 	var label := _float_pool[_next_float]
 	var state := _float_state[_next_float]
 	_next_float = (_next_float + 1) % FLOAT_POOL_SIZE
 	label.text = text
-	label.add_theme_font_size_override("font_size", 76 if is_crit else 52)
-	label.add_theme_color_override("font_color", Color("#ffd35a") if is_crit else Color(1, 1, 1, 0.95))
+	var size_px := 96 if kind == "perfect" else (76 if is_crit else 52)
+	var color := Color.WHITE if kind == "perfect" else (Color("#ffd35a") if is_crit else (Color("#ffb27a") if hot else Color(1, 1, 1, 0.95)))
+	label.add_theme_font_size_override("font_size", size_px)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_outline_color", Color("#b8860b") if kind == "perfect" else Color(0.05, 0.05, 0.06, 0.85))
 	label.reset_size()
 	var rect := _art_rect()
 	var start := Vector2(
@@ -237,6 +257,10 @@ func _process(delta: float) -> void:
 
 	if _ring_age < RING_LIFETIME:
 		_ring_age += delta
+	if _particles_reset_pending and not _particles.emitting:
+		_particles_reset_pending = false
+		_particles.amount = 18
+		_particles.color = accent.lightened(0.2)
 	queue_redraw()
 
 func _draw() -> void:
@@ -252,7 +276,7 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 
 	if _ring_age < RING_LIFETIME:
-		var t := _ring_age / RING_LIFETIME
+		var t := clampf(_ring_age, 0.0, RING_LIFETIME) / RING_LIFETIME
 		var ring_center := rect.get_center() + Vector2(0, -rect.size.y * 0.05)
 		draw_arc(ring_center, rect.size.x * (0.3 + 0.25 * t), 0.0, TAU, 64,
 			Color(_ring_color, (1.0 - t) * 0.45), 8.0 * (1.0 - t) + 2.0, true)

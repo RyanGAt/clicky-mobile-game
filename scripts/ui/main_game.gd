@@ -43,10 +43,13 @@ func _ready() -> void:
 	GameManager.switch_unlocked.connect(_on_switch_unlocked)
 	GameManager.keycap_unlocked.connect(_on_keycap_unlocked)
 	AchievementManager.achievement_unlocked.connect(_on_achievement_unlocked)
+	GameManager.mastery_reached.connect(_on_mastery_reached)
+	GameManager.event_triggered.connect(_on_event)
 	SaveManager.offline_earnings_ready.connect(func(_e, _s): _show_offline_earnings_if_pending())
 	SaveManager.load_problem.connect(func(msg): _toast(msg))
 	get_viewport().size_changed.connect(_layout_sheet)
 
+	_build_streak_pill()
 	_apply_equipped(false)
 	_layout_sheet()
 	_select_tab(0)
@@ -65,6 +68,7 @@ func _process(delta: float) -> void:
 		panels[_current_tab].refresh()
 	var stage_rect := switch_view.get_global_rect()
 	background.glow_center = (stage_rect.get_center()) / size
+	_update_streak_pill(stage_rect)
 
 # --- Layout -----------------------------------------------------------------
 
@@ -95,11 +99,17 @@ func _build_tabs() -> void:
 		_tab_buttons.append(b)
 
 func _select_tab(index: int) -> void:
+	var changed := index != _current_tab
 	_current_tab = index
 	for i in panels.size():
 		panels[i].visible = i == index
 	panels[index].refresh()
 	_paint_tabs()
+	if changed:
+		# Quick fade so tab changes read as a transition, not a jump.
+		var panel := panels[index]
+		panel.modulate.a = 0.0
+		create_tween().tween_property(panel, "modulate:a", 1.0, 0.16)
 
 func _paint_tabs() -> void:
 	for i in _tab_buttons.size():
@@ -118,26 +128,30 @@ func _paint_tabs() -> void:
 func _on_switch_pressed(pos: Vector2) -> void:
 	var result := GameManager.tap()
 	var is_crit := bool(result["is_crit"])
+	var is_perfect := bool(result["is_perfect"])
 	var amount := GameManager.format_number(float(result["amount"]))
-	switch_view.show_tap_result(("CRIT +%s" if is_crit else "+%s") % amount, is_crit, pos)
-	Feedback.play(Feedback.Sound.CRIT if is_crit else Feedback.Sound.KEY_DOWN, 0.04)
-	Feedback.vibrate("crit" if is_crit else "tap")
+	if is_perfect:
+		switch_view.show_tap_result("PERFECT +%s" % amount, true, pos, "perfect")
+		Feedback.play(Feedback.Sound.PERFECT_PRESS)
+		Feedback.vibrate("perfect")
+	else:
+		switch_view.show_tap_result(("CRIT +%s" if is_crit else "+%s") % amount, is_crit, pos, "", bool(result["streak"]))
+		Feedback.vibrate("crit" if is_crit else "tap")
+		if is_crit:
+			Feedback.play(Feedback.Sound.CRIT, 0.04)
+	Feedback.play(Feedback.Sound.KEY_DOWN, 0.04)
 	if _hint:
 		_dismiss_hint()
-
-func get_display_texture() -> Texture2D:
-	var path: String = GameManager.get_equipped_switch_data().get("asset_path", "")
-	if path != "" and ResourceLoader.exists(path):
-		return load(path)
-	push_warning("Switch artwork missing: '%s'" % path)
-	return null
 
 func _apply_equipped(animate: bool) -> void:
 	var data := GameManager.get_equipped_switch_data()
 	_accent = Color(data.get("color", "#d9cfb5"))
-	switch_view.set_switch_texture(get_display_texture(), _accent, animate)
+	var art := UIStyle.switch_art(GameManager.equipped_switch)
+	switch_view.set_switch_texture(art["texture"], _accent, animate, art["tint"])
 	switch_name.text = data.get("name", "Switch")
 	switch_tier.text = String(data.get("tier_label", "Tier %d" % int(data.get("tier", 1)))).to_upper()
+	if art["placeholder"]:
+		switch_tier.text += "  ·  TEMP ART"
 	switch_tier.add_theme_color_override("font_color", Color(_accent, 0.85))
 	background.set_accent(_accent)
 	keycap_badge.show_keycap(GameManager.equipped_keycap)
@@ -148,7 +162,7 @@ func _apply_equipped(animate: bool) -> void:
 
 # --- Events -----------------------------------------------------------------
 
-func _on_upgrade_bought(card: UpgradeCard, _id: String, _amount: int) -> void:
+func _on_upgrade_bought(_card: UpgradeCard, _id: String, _amount: int) -> void:
 	Feedback.play(Feedback.Sound.PURCHASE)
 	Feedback.vibrate("purchase")
 	switch_view.pulse(0.03)
@@ -169,6 +183,62 @@ func _show_next_unlock() -> void:
 		_show_next_unlock())
 	_open_popup(popup)
 
+func _on_mastery_reached(id: String, level: int) -> void:
+	var name: String = GameManager.switches.get(id, {}).get("name", id)
+	var bonus := roundi((GameManager.get_mastery_multiplier(id) - 1.0) * 100.0)
+	var total: int = GameManager.get_mastery_thresholds().size()
+	_toast(("%s mastered! +%d%%" if level >= total else "%s mastery %d · +%d%%") % ([name, bonus] if level >= total else [name, level, bonus]))
+	Feedback.play(Feedback.Sound.MASTERY)
+	Feedback.vibrate("unlock")
+	switch_view.pulse(0.08)
+
+func _on_event(kind: String) -> void:
+	if kind == "hot_streak":
+		Feedback.play(Feedback.Sound.HOT_STREAK)
+
+# --- Hot Streak pill --------------------------------------------------------
+
+var _streak_pill: PanelContainer
+var _streak_bar: ProgressBar
+
+func _build_streak_pill() -> void:
+	_streak_pill = PanelContainer.new()
+	var sb := UIStyle.box(Color("#ff8a3d", 0.16), 30)
+	sb.content_margin_left = 28
+	sb.content_margin_right = 28
+	sb.content_margin_top = 8
+	sb.content_margin_bottom = 10
+	_streak_pill.add_theme_stylebox_override("panel", sb)
+	_streak_pill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 4)
+	_streak_pill.add_child(col)
+	var l := UIStyle.label("HOT STREAK  x%s TAPS" % GameManager.format_number(float(GameManager.balance.get("streak_multiplier", 2))), 26, Color("#ffb27a"), 800)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(l)
+	_streak_bar = ProgressBar.new()
+	_streak_bar.show_percentage = false
+	_streak_bar.custom_minimum_size = Vector2(0, 6)
+	_streak_bar.max_value = float(GameManager.balance.get("streak_duration", 5.0))
+	_streak_bar.add_theme_stylebox_override("background", UIStyle.box(Color(1, 1, 1, 0.08), 3))
+	_streak_bar.add_theme_stylebox_override("fill", UIStyle.box(Color("#ff8a3d"), 3))
+	col.add_child(_streak_bar)
+	_streak_pill.visible = false
+	fx_layer.add_child(_streak_pill)
+
+func _update_streak_pill(stage_rect: Rect2) -> void:
+	var active: bool = GameManager.is_streak_active()
+	if active and not _streak_pill.visible:
+		_streak_pill.visible = true
+		_streak_pill.modulate.a = 0.0
+		create_tween().tween_property(_streak_pill, "modulate:a", 1.0, 0.15)
+	elif not active and _streak_pill.visible:
+		_streak_pill.visible = false
+	if active:
+		_streak_bar.value = GameManager.get_streak_remaining()
+		_streak_pill.reset_size()
+		_streak_pill.position = Vector2((size.x - _streak_pill.size.x) * 0.5, stage_rect.position.y + 6.0)
+
 func _on_keycap_unlocked(id: String) -> void:
 	_toast("New keycap: %s" % GameManager.keycaps.get(id, {}).get("name", id))
 
@@ -186,9 +256,29 @@ func _show_offline_earnings_if_pending() -> void:
 
 # --- Toasts & hints ---------------------------------------------------------
 
-var _toast_count := 0
+var _toast_queue: Array[String] = []
+var _toast_showing := false
 
+## Toasts show one at a time. A backlog of achievement toasts is merged
+## into a single summary so a burst of unlocks never stacks up on screen.
 func _toast(message: String) -> void:
+	_toast_queue.append(message)
+	if not _toast_showing:
+		_show_next_toast()
+
+func _show_next_toast() -> void:
+	if _toast_queue.is_empty():
+		_toast_showing = false
+		return
+	_toast_showing = true
+	var achievements := _toast_queue.filter(func(m): return m.begins_with("Achievement: "))
+	var message: String
+	if achievements.size() >= 3:
+		for m in achievements:
+			_toast_queue.erase(m)
+		message = "%d achievements unlocked" % achievements.size()
+	else:
+		message = _toast_queue.pop_front()
 	var pill := PanelContainer.new()
 	var sb := UIStyle.box(UIStyle.SURFACE_3, 40)
 	sb.content_margin_left = 36
@@ -204,23 +294,20 @@ func _toast(message: String) -> void:
 	pill.add_child(l)
 	fx_layer.add_child(pill)
 	pill.reset_size()
-	var slot := _toast_count
-	_toast_count += 1
-	# Toasts sit over the goal-bar row (stacking upward) so they never cover
-	# the switch, where the floating numbers rise.
+	# Sits over the goal-bar row so it never covers the switch.
 	var g := goal_bar.get_global_rect()
-	var y := g.position.y + (g.size.y - pill.size.y) * 0.5 - slot * (pill.size.y + 12.0)
-	pill.position = Vector2((size.x - pill.size.x) * 0.5, y - 30.0)
+	var y := g.position.y + (g.size.y - pill.size.y) * 0.5
+	pill.position = Vector2((size.x - pill.size.x) * 0.5, y + 24.0)
 	pill.modulate.a = 0.0
 	var tw := create_tween()
 	tw.set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	tw.tween_property(pill, "modulate:a", 1.0, 0.2)
-	tw.tween_property(pill, "position:y", y, 0.25)
-	tw.chain().tween_interval(2.2)
-	tw.chain().tween_property(pill, "modulate:a", 0.0, 0.35)
+	tw.tween_property(pill, "modulate:a", 1.0, 0.18)
+	tw.tween_property(pill, "position:y", y, 0.22)
+	tw.chain().tween_interval(1.6 if _toast_queue.is_empty() else 1.0)
+	tw.chain().tween_property(pill, "modulate:a", 0.0, 0.25)
 	tw.chain().tween_callback(func():
-		_toast_count = maxi(_toast_count - 1, 0)
-		pill.queue_free())
+		pill.queue_free()
+		_show_next_toast())
 
 func _show_tap_hint() -> void:
 	_hint = UIStyle.label("Tap the switch", 32, UIStyle.TEXT_DIM, 700)

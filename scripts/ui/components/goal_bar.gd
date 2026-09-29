@@ -1,7 +1,7 @@
 class_name GoalBar
 extends VBoxContainer
 ## "Next goal" strip under the switch: the nearest locked switch, otherwise
-## the nearest locked keycap, otherwise the next upgrade milestone.
+## the nearest locked keycap, otherwise the equipped switch's next mastery level.
 
 var _label: Label
 var _value: Label
@@ -55,6 +55,14 @@ func _find_goal() -> Dictionary:
 		var req := float(GameManager.keycaps[id].get("unlock_requirement_clicks", 0.0))
 		if best.is_empty() or req < best["target"]:
 			best = {"text": "Next keycap: %s" % GameManager.keycaps[id].get("name", id), "target": req, "value": GameManager.lifetime_clicks}
+	if not best.is_empty():
+		return best
+	# Everything unlocked: work toward mastering the equipped switch.
+	var id := GameManager.equipped_switch
+	var level: int = GameManager.get_mastery_level(id)
+	var thresholds: Array = GameManager.get_mastery_thresholds()
+	if level < thresholds.size():
+		return {"text": "%s mastery %d" % [GameManager.switches[id].get("name", id), level + 1], "target": float(thresholds[level]), "value": float(GameManager.presses_by_switch.get(id, 0))}
 	return best
 
 func refresh() -> void:
