@@ -2,6 +2,7 @@
     "office_membrane": {
         "name": "Office Membrane",
         "tier": 1,
+        "tier_label": "Tier 1 · Membrane",
         "description": "Cheap plastic, a dull press, and your first Click.",
         "unlock_requirement_clicks": 0,
         "click_power_multiplier": 1.0,
@@ -13,11 +14,12 @@
     "budget_linear": {
         "name": "Budget Linear",
         "tier": 2,
-        "description": "A smoother red switch with stronger taps and passive output.",
-        "unlock_requirement_clicks": 500,
-        "click_power_multiplier": 1.5,
-        "cps_multiplier": 1.2,
-        "color": "#f2b4a8",
+        "tier_label": "Tier 2 · Linear",
+        "description": "A smooth red linear. Every tap and every robot finger counts double.",
+        "unlock_requirement_clicks": 30000,
+        "click_power_multiplier": 2.0,
+        "cps_multiplier": 2.0,
+        "color": "#e0685a",
         "sound_category": "linear",
         "asset_path": "res://assets/switches/budget_linear.png"
     }

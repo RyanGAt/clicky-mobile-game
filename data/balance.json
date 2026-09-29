@@ -1,0 +1,8 @@
+{
+    "base_click_power": 1,
+    "crit_multiplier": 5,
+    "max_crit_chance": 0.4,
+    "offline_efficiency": 0.5,
+    "max_offline_hours": 8,
+    "min_offline_seconds": 30
+}

@@ -26,7 +26,7 @@ var _onboarding_hint: Label
 
 func _ready() -> void:
 	GameManager.clicks_changed.connect(_on_clicks_changed)
-	GameManager.upgrade_purchased.connect(_on_upgrade_purchased)
+	GameManager.upgrade_purchased.connect(func(id, _n): _on_upgrade_purchased(id))
 	GameManager.switch_equipped.connect(func(_id): _refresh_all_labels())
 
 	switch_button.button_down.connect(_on_switch_pressed)

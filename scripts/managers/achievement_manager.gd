@@ -10,7 +10,7 @@ var unlocked: Array = []
 func _ready() -> void:
 	_load_achievement_data()
 	GameManager.clicks_changed.connect(func(_total): _check_achievements())
-	GameManager.upgrade_purchased.connect(func(_id): _check_achievements())
+	GameManager.upgrade_purchased.connect(func(_id, _n): _check_achievements())
 	GameManager.switch_unlocked.connect(func(_id): _check_achievements())
 
 func _load_achievement_data() -> void:
