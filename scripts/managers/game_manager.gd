@@ -10,6 +10,8 @@ signal switch_unlocked(id: String)
 signal switch_equipped(id: String)
 signal keycap_unlocked(id: String)
 signal keycap_equipped(id: String)
+signal mastery_reached(switch_id: String, level: int)
+signal event_triggered(kind: String)
 
 const UPGRADES_PATH := "res://data/upgrades.json"
 const SWITCHES_PATH := "res://data/switches.json"
@@ -23,6 +25,15 @@ var clicks: float = 0.0
 var lifetime_clicks: float = 0.0
 var tap_count: int = 0
 var critical_click_count: int = 0
+var perfect_press_count: int = 0
+## Lifetime presses made while each switch was equipped (drives mastery).
+var presses_by_switch: Dictionary = {}
+## Seconds of active play this session; drives short-lived events.
+var game_time: float = 0.0
+
+var _recent_taps: Array = []
+var _streak_until := -1.0
+var _streak_cooldown_until := -1.0
 
 var balance: Dictionary = {}
 var upgrades: Dictionary = {}
@@ -47,6 +58,7 @@ func _ready() -> void:
 		owned[id] = 0
 
 func _process(delta: float) -> void:
+	game_time += delta
 	var effective_cps := get_effective_cps()
 	if effective_cps <= 0.0:
 		return
@@ -77,6 +89,11 @@ func reset_progress() -> void:
 	lifetime_clicks = 0.0
 	tap_count = 0
 	critical_click_count = 0
+	perfect_press_count = 0
+	presses_by_switch = {}
+	_recent_taps.clear()
+	_streak_until = -1.0
+	_streak_cooldown_until = -1.0
 	_cps_accumulator = 0.0
 	for id in upgrades.keys():
 		owned[id] = 0
@@ -97,15 +114,86 @@ func add_clicks(amount: float) -> void:
 	clicks_changed.emit(clicks)
 	_check_unlocks()
 
+## Resolves one manual tap. Order: base power -> Hot Streak -> crit -> Perfect Press.
 func tap() -> Dictionary:
 	var earned := get_effective_click_power()
+	_register_streak_tap()
+	if is_streak_active():
+		earned *= float(balance.get("streak_multiplier", 2.0))
 	var is_crit := randf() < get_crit_chance()
 	if is_crit:
 		earned *= get_crit_multiplier()
 		critical_click_count += 1
+	var is_perfect := randf() < float(balance.get("perfect_press_chance", 0.0))
+	if is_perfect:
+		earned *= float(balance.get("perfect_press_multiplier", 20.0))
+		perfect_press_count += 1
+		event_triggered.emit("perfect_press")
 	tap_count += 1
+	_add_mastery_press(equipped_switch)
 	add_clicks(earned)
-	return {"amount": earned, "is_crit": is_crit}
+	return {"amount": earned, "is_crit": is_crit, "is_perfect": is_perfect, "streak": is_streak_active()}
+
+# --- Hot Streak -------------------------------------------------------------
+# Tapping `streak_taps` times within `streak_window` seconds starts a short
+# streak; afterwards there's a cooldown so it stays an occasional moment.
+
+func _register_streak_tap() -> void:
+	_recent_taps.append(game_time)
+	var window := float(balance.get("streak_window", 4.0))
+	while not _recent_taps.is_empty() and game_time - float(_recent_taps[0]) > window:
+		_recent_taps.pop_front()
+	if is_streak_active() or game_time < _streak_cooldown_until:
+		return
+	if _recent_taps.size() >= int(balance.get("streak_taps", 20)):
+		_streak_until = game_time + float(balance.get("streak_duration", 5.0))
+		_streak_cooldown_until = _streak_until + float(balance.get("streak_cooldown", 15.0))
+		_recent_taps.clear()
+		event_triggered.emit("hot_streak")
+
+func is_streak_active() -> bool:
+	return game_time < _streak_until
+
+func get_streak_remaining() -> float:
+	return maxf(_streak_until - game_time, 0.0)
+
+# --- Mastery ------------------------------------------------------------------
+
+func _add_mastery_press(id: String) -> void:
+	var before := get_mastery_level(id)
+	presses_by_switch[id] = int(presses_by_switch.get(id, 0)) + 1
+	var after := get_mastery_level(id)
+	if after > before:
+		mastery_reached.emit(id, after)
+		stats_changed.emit()
+
+func get_mastery_thresholds() -> Array:
+	return balance.get("mastery_thresholds", [100, 1000, 10000])
+
+func get_mastery_level(id: String) -> int:
+	var presses := int(presses_by_switch.get(id, 0))
+	var level := 0
+	for t in get_mastery_thresholds():
+		if presses >= int(t):
+			level += 1
+	return level
+
+## Permanent bonus to that switch's multipliers from mastery (e.g. 1.10 = +10%).
+func get_mastery_multiplier(id: String) -> float:
+	var bonuses: Array = balance.get("mastery_bonuses", [0.02, 0.03, 0.05])
+	var total := 0.0
+	for i in mini(get_mastery_level(id), bonuses.size()):
+		total += float(bonuses[i])
+	return 1.0 + total
+
+func get_mastered_count() -> int:
+	var n := 0
+	for id in switches.keys():
+		if get_mastery_level(id) >= get_mastery_thresholds().size():
+			n += 1
+	return n
+
+# --- Stats --------------------------------------------------------------------
 
 ## Multiplier from "milestone" levels: every N owned doubles that upgrade.
 func get_milestone_multiplier(id: String) -> float:
@@ -129,30 +217,49 @@ func get_base_click_power() -> float:
 func get_base_cps() -> float:
 	return _upgrade_total("cps_bonus")
 
+## Percentage tap boost (Better Spring): 1 + sum of tap_percent_bonus.
+func get_tap_percent_multiplier() -> float:
+	return 1.0 + _upgrade_total("tap_percent_bonus")
+
+## Applies to both tapping and passive income: Lubed Switch and achievements.
+func get_global_multiplier() -> float:
+	var achievements := 0
+	if has_node("/root/AchievementManager"):
+		achievements = get_node("/root/AchievementManager").unlocked.size()
+	return (1.0 + _upgrade_total("global_percent_bonus")) * (1.0 + achievements * float(balance.get("achievement_bonus", 0.0)))
+
 func get_crit_chance() -> float:
-	var total := 0.0
+	var total := float(get_equipped_switch_data().get("crit_chance_bonus", 0.0))
 	for id in upgrades.keys():
 		total += float(upgrades[id].get("crit_chance_bonus", 0.0)) * float(owned.get(id, 0))
 	return clampf(total, 0.0, float(balance.get("max_crit_chance", 0.5)))
 
 func get_crit_multiplier() -> float:
-	return float(balance.get("crit_multiplier", 3.0))
+	return float(balance.get("crit_multiplier", 3.0)) + float(get_equipped_switch_data().get("crit_multiplier_bonus", 0.0))
 
 func get_equipped_switch_data() -> Dictionary:
 	return switches.get(equipped_switch, {})
 
+func get_switch_tap_multiplier(id: String) -> float:
+	return float(switches.get(id, {}).get("click_power_multiplier", 1.0)) * get_mastery_multiplier(id)
+
+func get_switch_cps_multiplier(id: String) -> float:
+	return float(switches.get(id, {}).get("cps_multiplier", 1.0)) * get_mastery_multiplier(id)
+
 func get_effective_click_power() -> float:
-	return get_base_click_power() * float(get_equipped_switch_data().get("click_power_multiplier", 1.0))
+	return get_base_click_power() * get_tap_percent_multiplier() * get_switch_tap_multiplier(equipped_switch) * get_global_multiplier()
 
 ## The single CPS formula used by both live income and offline earnings.
 func get_effective_cps() -> float:
-	return get_base_cps() * float(get_equipped_switch_data().get("cps_multiplier", 1.0))
+	return get_base_cps() * get_switch_cps_multiplier(equipped_switch) * get_global_multiplier()
+
+const BENEFIT_STATS := ["click_power_bonus", "cps_bonus", "crit_chance_bonus", "tap_percent_bonus", "global_percent_bonus"]
 
 ## Current per-level benefit of an upgrade, including milestone doubling.
 func get_upgrade_benefit(id: String) -> Dictionary:
 	var data: Dictionary = upgrades.get(id, {})
 	var m := get_milestone_multiplier(id)
-	for stat in ["click_power_bonus", "cps_bonus", "crit_chance_bonus"]:
+	for stat in BENEFIT_STATS:
 		if data.has(stat):
 			var per_level := float(data[stat]) * (1.0 if stat == "crit_chance_bonus" else m)
 			return {"stat": stat, "per_level": per_level, "total": per_level * float(owned.get(id, 0))}

@@ -1,31 +1,87 @@
 {
     "stronger_finger": {
         "name": "Stronger Finger",
-        "description": "Press harder. More Clicks every tap.",
-        "icon_path": "res://assets/icons/stronger_finger.png",
+        "path": "tap",
+        "description": "+1 Click per tap. Doubles every 10 levels.",
+        "flavor": "Do you even lift, bro? (Your finger. Do you lift your finger.)",
+        "icon_path": "",
         "base_cost": 40,
         "growth_rate": 1.3,
         "click_power_bonus": 1,
         "milestone_every": 10,
-        "milestone_multiplier": 2
+        "milestone_multiplier": 2,
+        "icon_wanted": "res://assets/icons/stronger_finger.png"
     },
     "automatic_finger": {
         "name": "Automatic Finger",
-        "description": "A tireless robot finger that taps for you.",
+        "path": "passive",
+        "description": "+3 Clicks per second. Doubles every 10 levels.",
+        "flavor": "HR says this counts as automation.",
         "icon_path": "res://assets/icons/automatic_finger.png",
         "base_cost": 210,
         "growth_rate": 1.22,
-        "cps_bonus": 2,
+        "cps_bonus": 3,
         "milestone_every": 10,
         "milestone_multiplier": 2
     },
     "lucky_press": {
         "name": "Lucky Press",
-        "description": "Better odds of a Critical Click worth 5x.",
+        "path": "tap",
+        "description": "+4% chance per level for a Critical Click.",
+        "flavor": "Found a four-leaf clover under the spacebar.",
         "icon_path": "res://assets/icons/lucky_press.png",
         "base_cost": 900,
         "growth_rate": 2.1,
         "crit_chance_bonus": 0.04,
         "max_owned": 10
+    },
+    "better_spring": {
+        "name": "Better Spring",
+        "path": "tap",
+        "description": "+15% tap power per level. Multiplies everything else.",
+        "flavor": "Gold-plated. Probably. The listing said 'gold colour'.",
+        "icon_path": "",
+        "base_cost": 3000,
+        "growth_rate": 2.2,
+        "tap_percent_bonus": 0.1,
+        "icon_wanted": "res://assets/icons/better_spring.png"
+    },
+    "typing_cat": {
+        "name": "Typing Cat",
+        "path": "passive",
+        "description": "+50 Clicks per second. Doubles every 10 levels.",
+        "flavor": "Productivity remains questionable.",
+        "icon_path": "",
+        "base_cost": 6000,
+        "growth_rate": 1.3,
+        "cps_bonus": 50,
+        "milestone_every": 10,
+        "milestone_multiplier": 2,
+        "icon_wanted": "res://assets/icons/typing_cat.png"
+    },
+    "lubed_switch": {
+        "name": "Lubed Switch",
+        "path": "hybrid",
+        "description": "+10% to all taps and passive income per level.",
+        "flavor": "Hand-lubed with a tiny brush at 2am. Worth it.",
+        "icon_path": "",
+        "base_cost": 60000,
+        "growth_rate": 3.2,
+        "global_percent_bonus": 0.1,
+        "max_owned": 10,
+        "icon_wanted": "res://assets/icons/lubed_switch.png"
+    },
+    "angry_programmer": {
+        "name": "Angry Programmer",
+        "path": "passive",
+        "description": "+1,200 Clicks per second. Doubles every 10 levels.",
+        "flavor": "Types like the keyboard owes them money.",
+        "icon_path": "",
+        "base_cost": 300000,
+        "growth_rate": 1.32,
+        "cps_bonus": 1200,
+        "milestone_every": 10,
+        "milestone_multiplier": 2,
+        "icon_wanted": "res://assets/icons/angry_programmer.png"
     }
 }

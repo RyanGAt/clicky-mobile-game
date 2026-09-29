@@ -4,27 +4,31 @@
         "description": "The keycap it came with.",
         "unlock_requirement_clicks": 0,
         "color": "#e8dcc0",
-        "asset_path": "res://assets/keycaps/plain_beige.png"
+        "asset_path": "res://assets/keycaps/plain_beige.png",
+        "flavor": "It came in the box. It will leave in the box."
     },
     "retro_grey": {
         "name": "Retro Grey",
         "description": "A muted grey cap with a soft matte finish.",
         "unlock_requirement_clicks": 1500,
         "color": "#9a9a9a",
-        "asset_path": "res://assets/keycaps/retro_grey.png"
+        "asset_path": "res://assets/keycaps/retro_grey.png",
+        "flavor": "Yellowed slightly. It has seen things."
     },
     "warning_symbol": {
         "name": "Warning Symbol",
         "description": "Press with caution. Or don't.",
         "unlock_requirement_clicks": 12000,
         "color": "#f2c230",
-        "asset_path": "res://assets/keycaps/warning_symbol.png"
+        "asset_path": "res://assets/keycaps/warning_symbol.png",
+        "flavor": "Do not press. (Press it.)"
     },
     "smiley_face": {
         "name": "Smiley Face",
         "description": "A cheerful yellow cap.",
         "unlock_requirement_clicks": 60000,
         "color": "#ffe066",
-        "asset_path": "res://assets/keycaps/smiley_face.png"
+        "asset_path": "res://assets/keycaps/smiley_face.png",
+        "flavor": "Unsettlingly supportive."
     }
 }

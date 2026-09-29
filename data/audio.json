@@ -1,0 +1,9 @@
+{
+    "_comment": "Optional sound paths without extension (.ogg/.wav/.mp3 are tried). Missing files are silently skipped. Per-switch press/release paths live in switches.json.",
+    "crit": "res://assets/audio/ui/crit",
+    "perfect_press": "res://assets/audio/ui/perfect_press",
+    "hot_streak": "res://assets/audio/ui/hot_streak",
+    "purchase": "res://assets/audio/ui/purchase",
+    "unlock": "res://assets/audio/ui/unlock",
+    "mastery": "res://assets/audio/ui/mastery"
+}

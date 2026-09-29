@@ -14,7 +14,7 @@ signal load_problem(message: String)
 const SAVE_PATH := "user://save.dat"
 const BACKUP_PATH := "user://save.dat.bak"
 const TEMP_PATH := "user://save.dat.tmp"
-const SAVE_VERSION := 2
+const SAVE_VERSION := 3
 const AUTO_SAVE_INTERVAL := 15.0
 
 var settings: Dictionary = {
@@ -73,6 +73,8 @@ func build_save_data() -> Dictionary:
 		"lifetime_clicks": GameManager.lifetime_clicks,
 		"tap_count": GameManager.tap_count,
 		"critical_click_count": GameManager.critical_click_count,
+		"perfect_press_count": GameManager.perfect_press_count,
+		"presses_by_switch": GameManager.presses_by_switch,
 		"owned": GameManager.owned,
 		"unlocked_switches": GameManager.unlocked_switches,
 		"equipped_switch": GameManager.equipped_switch,
@@ -159,6 +161,18 @@ func _apply_save(parsed: Dictionary) -> void:
 	gm.lifetime_clicks = maxf(_num(parsed.get("lifetime_clicks"), gm.clicks), gm.clicks)
 	gm.tap_count = maxi(int(_num(parsed.get("tap_count"), 0)), 0)
 	gm.critical_click_count = maxi(int(_num(parsed.get("critical_click_count"), 0)), 0)
+	gm.perfect_press_count = maxi(int(_num(parsed.get("perfect_press_count"), 0)), 0)
+	# v3: presses made while each switch was equipped (mastery). Older saves
+	# credit their total tap count to Office Membrane, the only switch
+	# guaranteed to have been used.
+	gm.presses_by_switch = {}
+	var saved_presses = parsed.get("presses_by_switch", null)
+	if saved_presses is Dictionary:
+		for id in saved_presses.keys():
+			if gm.switches.has(str(id)):
+				gm.presses_by_switch[str(id)] = maxi(int(_num(saved_presses[id], 0)), 0)
+	elif gm.tap_count > 0:
+		gm.presses_by_switch[GameManager.DEFAULT_SWITCH] = gm.tap_count
 	# v1 also stored click_power/clicks_per_second/critical_chance; those are
 	# now derived from `owned`, so they are intentionally ignored.
 

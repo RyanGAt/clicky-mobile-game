@@ -6,45 +6,123 @@
         "condition_value": 1
     },
     "hundred_taps": {
-        "name": "Click 100 Times",
-        "description": "Tap the switch 100 times.",
+        "name": "Warming Up",
+        "description": "Tap 100 times.",
         "condition_type": "tap_count",
         "condition_value": 100
     },
     "thousand_taps": {
-        "name": "Click 1,000 Times",
-        "description": "Tap the switch 1,000 times.",
+        "name": "Repetitive Strain",
+        "description": "Tap 1,000 times.",
         "condition_type": "tap_count",
         "condition_value": 1000
     },
-    "ten_automatic_fingers": {
-        "name": "Own 10 Automatic Fingers",
-        "description": "Purchase 10 Automatic Finger upgrades.",
-        "condition_type": "owned_automatic_finger",
-        "condition_value": 10
+    "ten_thousand_taps": {
+        "name": "Carpal Commitment",
+        "description": "Tap 10,000 times.",
+        "condition_type": "tap_count",
+        "condition_value": 10000
     },
-    "thousand_cps": {
-        "name": "Reach 1,000 Clicks per Second",
-        "description": "Reach a Clicks per Second of 1,000.",
-        "condition_type": "clicks_per_second",
-        "condition_value": 1000
-    },
-    "unlock_three_switches": {
-        "name": "Unlock Three Switches",
-        "description": "Unlock three different keyboard switches.",
-        "condition_type": "switches_unlocked",
-        "condition_value": 3
-    },
-    "million_clicks": {
-        "name": "Earn One Million Clicks",
-        "description": "Earn a lifetime total of one million Clicks.",
-        "condition_type": "lifetime_clicks",
-        "condition_value": 1000000
+    "first_crit": {
+        "name": "Lucky Break",
+        "description": "Land your first Critical Click.",
+        "condition_type": "critical_click_count",
+        "condition_value": 1
     },
     "hundred_crits": {
-        "name": "Trigger 100 Critical Clicks",
+        "name": "Crit Happens",
         "description": "Land 100 Critical Clicks.",
         "condition_type": "critical_click_count",
         "condition_value": 100
+    },
+    "first_perfect": {
+        "name": "Perfect Press",
+        "description": "Land a Perfect Press.",
+        "condition_type": "perfect_press_count",
+        "condition_value": 1
+    },
+    "first_passive": {
+        "name": "Hands Free",
+        "description": "Earn Clicks without tapping.",
+        "condition_type": "clicks_per_second",
+        "condition_value": 0.01
+    },
+    "hundred_cps": {
+        "name": "Background Noise",
+        "description": "Reach 100 Clicks per second.",
+        "condition_type": "clicks_per_second",
+        "condition_value": 100
+    },
+    "thousand_cps": {
+        "name": "Server Farm",
+        "description": "Reach 1,000 Clicks per second.",
+        "condition_type": "clicks_per_second",
+        "condition_value": 1000
+    },
+    "ten_thousand_cps": {
+        "name": "It Runs Itself",
+        "description": "Reach 10,000 Clicks per second.",
+        "condition_type": "clicks_per_second",
+        "condition_value": 10000
+    },
+    "unlock_budget_linear": {
+        "name": "Going Mechanical",
+        "description": "Unlock Budget Linear.",
+        "condition_type": "switch_unlocked",
+        "condition_value": "budget_linear"
+    },
+    "unlock_scratchy_tactile": {
+        "name": "Feel the Bump",
+        "description": "Unlock Scratchy Tactile.",
+        "condition_type": "switch_unlocked",
+        "condition_value": "scratchy_tactile"
+    },
+    "unlock_deafening_clicky": {
+        "name": "Noise Complaint",
+        "description": "Unlock Deafening Clicky.",
+        "condition_type": "switch_unlocked",
+        "condition_value": "deafening_clicky"
+    },
+    "unlock_creamy_linear": {
+        "name": "Endgame Board",
+        "description": "Unlock Creamy Linear.",
+        "condition_type": "switch_unlocked",
+        "condition_value": "creamy_linear"
+    },
+    "ten_levels": {
+        "name": "Committed",
+        "description": "Own 10 levels of one upgrade.",
+        "condition_type": "upgrade_level_any",
+        "condition_value": 10
+    },
+    "fifty_levels": {
+        "name": "Spreadsheet Brain",
+        "description": "Own 50 upgrade levels in total.",
+        "condition_type": "total_upgrade_levels",
+        "condition_value": 50
+    },
+    "first_mastery": {
+        "name": "Getting to Know You",
+        "description": "Reach mastery 1 on any switch.",
+        "condition_type": "mastery_level_any",
+        "condition_value": 1
+    },
+    "full_mastery": {
+        "name": "Switch Whisperer",
+        "description": "Fully master any switch.",
+        "condition_type": "mastery_level_any",
+        "condition_value": 3
+    },
+    "million_clicks": {
+        "name": "Millionaire (Clicks)",
+        "description": "Earn one million lifetime Clicks.",
+        "condition_type": "lifetime_clicks",
+        "condition_value": 1000000.0
+    },
+    "billion_clicks": {
+        "name": "Numbers Go Up",
+        "description": "Earn one billion lifetime Clicks.",
+        "condition_type": "lifetime_clicks",
+        "condition_value": 1000000000.0
     }
 }
