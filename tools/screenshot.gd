@@ -29,6 +29,15 @@ func _go() -> void:
 			gm.owned["automatic_finger"] = 14
 			gm.owned["lucky_press"] = 3
 			gm.add_clicks(12000)
+	if scenario == "late":
+		for id in gm.upgrades.keys():
+			gm.owned[id] = 6
+		gm.owned["lucky_press"] = 4
+		gm.unlocked_switches = gm.switches.keys()
+		gm.presses_by_switch = {"office_membrane": 1400, "budget_linear": 12000, "scratchy_tactile": 300, "deafening_clicky": 40}
+		gm.equipped_switch = "deafening_clicky"
+		gm.add_clicks(3.0e8)
+		root.get_node("AchievementManager").check_now()
 	var main: Control = load("res://scenes/main/main_game.tscn").instantiate()
 	root.add_child(main)
 	for i in 20:
@@ -61,7 +70,7 @@ func _go() -> void:
 		await _shot("%s/offline.png" % out)
 		return quit()
 	# Mid-press with floating numbers and a crit.
-	var c := view.get_global_rect().get_center()
+	var c: Vector2 = view.get_global_rect().get_center()
 	for i in 4:
 		var ev := InputEventScreenTouch.new()
 		ev.position = c + Vector2(i * 30 - 45, 0)
@@ -73,6 +82,15 @@ func _go() -> void:
 		ev.pressed = false
 		root.push_input(ev, true)
 	view.show_tap_result("CRIT +185", true, c)
+	if scenario == "late":
+		gm.balance["perfect_press_chance"] = 1.0
+		gm.game_time = 0.0
+		for i in 22:
+			gm.tap()
+		gm.balance["perfect_press_chance"] = 0.0
+		view.show_tap_result("PERFECT +1.2M", true, c, "perfect")
+		for c2 in main.get_node("PopupLayer").get_children():
+			c2.queue_free()
 	var ev2 := InputEventScreenTouch.new()
 	ev2.position = c
 	ev2.pressed = true
