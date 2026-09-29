@@ -21,7 +21,7 @@ func _populate_switches() -> void:
 	for id in GameManager.switches.keys():
 		var data: Dictionary = GameManager.switches[id]
 		var unlocked := GameManager.is_switch_unlocked(id)
-		var equipped := id == GameManager.equipped_switch
+		var equipped: bool = id == GameManager.equipped_switch
 
 		var row := PanelContainer.new()
 		var margin := MarginContainer.new()
@@ -74,7 +74,7 @@ func _populate_keycaps() -> void:
 	for id in GameManager.keycaps.keys():
 		var data: Dictionary = GameManager.keycaps[id]
 		var unlocked := GameManager.is_keycap_unlocked(id)
-		var equipped := id == GameManager.equipped_keycap
+		var equipped: bool = id == GameManager.equipped_keycap
 
 		var row := PanelContainer.new()
 		var margin := MarginContainer.new()

@@ -48,7 +48,7 @@ func _process(delta: float) -> void:
 		return
 	_cps_accumulator += effective_cps * delta
 	if _cps_accumulator >= 1.0:
-		var whole := floor(_cps_accumulator)
+		var whole := floorf(_cps_accumulator)
 		_cps_accumulator -= whole
 		add_clicks(whole)
 
