@@ -132,7 +132,12 @@ func _read_save(path: String) -> Dictionary:
 	return {"data": json.data}
 
 func _preserve_bad_file(path: String, reason: String) -> void:
-	var dest := "user://save.%s.%d.dat" % [reason, int(Time.get_unix_time_from_system())]
+	var stamp := int(Time.get_unix_time_from_system())
+	var dest := "user://save.%s.%d.dat" % [reason, stamp]
+	var n := 1
+	while FileAccess.file_exists(dest):
+		dest = "user://save.%s.%d-%d.dat" % [reason, stamp, n]
+		n += 1
 	var err := DirAccess.copy_absolute(path, dest)
 	if err == OK:
 		DirAccess.remove_absolute(path)
