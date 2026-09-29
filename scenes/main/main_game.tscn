@@ -1,8 +1,19 @@
-[gd_scene load_steps=2 format=3 uid="uid://d3k4g8h2p6q1n"]
+[gd_scene load_steps=12 format=3 uid="uid://d3k4g8h2p6q1n"]
 
 [ext_resource type="Script" path="res://scripts/ui/main_game.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/ui/components/switch_view.gd" id="2_switch"]
+[ext_resource type="Script" path="res://scripts/ui/components/background.gd" id="3_bg"]
+[ext_resource type="Script" path="res://scripts/ui/components/safe_area.gd" id="4_safe"]
+[ext_resource type="Script" path="res://scripts/ui/components/currency_display.gd" id="5_currency"]
+[ext_resource type="Script" path="res://scripts/ui/components/icon_button.gd" id="6_gear"]
+[ext_resource type="Script" path="res://scripts/ui/panels/upgrades_panel.gd" id="7_upgrades"]
+[ext_resource type="Script" path="res://scripts/ui/panels/switches_panel.gd" id="8_switches"]
+[ext_resource type="Script" path="res://scripts/ui/panels/collection_panel.gd" id="9_collection"]
+[ext_resource type="Script" path="res://scripts/ui/components/goal_bar.gd" id="10_goal"]
+[ext_resource type="Script" path="res://scripts/ui/components/keycap_badge.gd" id="11_badge"]
 
 [node name="MainGame" type="Control"]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -10,99 +21,140 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="Control" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.08, 0.09, 0.11, 1)
+mouse_filter = 2
+script = ExtResource("3_bg")
 
-[node name="TopPanel" type="VBoxContainer" parent="."]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 80.0
-offset_bottom = 260.0
-grow_horizontal = 2
-alignment = 1
-
-[node name="ClicksLabel" type="Label" parent="TopPanel"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 72
-horizontal_alignment = 1
-text = "0"
-
-[node name="StatsRow" type="HBoxContainer" parent="TopPanel"]
-layout_mode = 2
-alignment = 1
-
-[node name="CPTLabel" type="Label" parent="TopPanel/StatsRow"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "Per Tap: 1"
-
-[node name="Spacer" type="Control" parent="TopPanel/StatsRow"]
-custom_minimum_size = Vector2(40, 0)
-layout_mode = 2
-
-[node name="CPSLabel" type="Label" parent="TopPanel/StatsRow"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "CPS: 0"
-
-[node name="SwitchArea" type="CenterContainer" parent="."]
+[node name="SafeArea" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 200.0
-offset_bottom = -320.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_safe")
+bottom_extra = 28
 
-[node name="SwitchButton" type="Button" parent="SwitchArea"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(520, 520)
+[node name="Column" type="VBoxContainer" parent="SafeArea"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
-text = "TAP"
+mouse_filter = 2
+theme_override_constants/separation = 0
 
-[node name="SwitchAudio" type="AudioStreamPlayer" parent="SwitchArea/SwitchButton"]
+[node name="TopBar" type="Control" parent="SafeArea/Column"]
+custom_minimum_size = Vector2(0, 290)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="CurrencyDisplay" type="VBoxContainer" parent="SafeArea/Column/TopBar"]
 unique_name_in_owner = true
-bus = &"Master"
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_currency")
 
-[node name="SettingsButton" type="Button" parent="."]
+[node name="SettingsButton" type="Button" parent="SafeArea/Column/TopBar"]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -160.0
-offset_top = 60.0
-offset_right = -40.0
-offset_bottom = 140.0
+offset_left = -108.0
+offset_top = 6.0
+offset_bottom = 114.0
 grow_horizontal = 0
-theme_override_font_sizes/font_size = 24
-text = "Settings"
+script = ExtResource("6_gear")
 
-[node name="CollectionButton" type="Button" parent="."]
+[node name="KeycapBadge" type="Button" parent="SafeArea/Column/TopBar"]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 0
-offset_left = 40.0
-offset_top = 60.0
-offset_right = 200.0
-offset_bottom = 140.0
-theme_override_font_sizes/font_size = 24
-text = "Collection"
+offset_top = 6.0
+offset_right = 108.0
+offset_bottom = 114.0
+script = ExtResource("11_badge")
 
-[node name="FloatingTextLayer" type="Control" parent="."]
+[node name="Stage" type="VBoxContainer" parent="SafeArea/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="SwitchView" type="Control" parent="SafeArea/Column/Stage"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 380)
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_switch")
+
+[node name="SwitchName" type="Label" parent="SafeArea/Column/Stage"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="SwitchTier" type="Label" parent="SafeArea/Column/Stage"]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="GoalBar" type="VBoxContainer" parent="SafeArea/Column/Stage"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("10_goal")
+
+[node name="Sheet" type="PanelContainer" parent="SafeArea/Column"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 760)
+layout_mode = 2
+
+[node name="SheetBox" type="VBoxContainer" parent="SafeArea/Column/Sheet"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Content" type="MarginContainer" parent="SafeArea/Column/Sheet/SheetBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 0
+
+[node name="UpgradesPanel" type="VBoxContainer" parent="SafeArea/Column/Sheet/SheetBox/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("7_upgrades")
+
+[node name="SwitchesPanel" type="VBoxContainer" parent="SafeArea/Column/Sheet/SheetBox/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+script = ExtResource("8_switches")
+
+[node name="CollectionPanel" type="VBoxContainer" parent="SafeArea/Column/Sheet/SheetBox/Content"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+script = ExtResource("9_collection")
+
+[node name="Tabs" type="HBoxContainer" parent="SafeArea/Column/Sheet/SheetBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 124)
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="FxLayer" type="Control" parent="."]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -114,46 +166,4 @@ mouse_filter = 2
 
 [node name="PopupLayer" type="CanvasLayer" parent="."]
 unique_name_in_owner = true
-
-[node name="BottomPanel" type="HBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -300.0
-offset_bottom = -60.0
-offset_left = 40.0
-offset_right = -40.0
-grow_horizontal = 2
-grow_vertical = 0
-alignment = 1
-
-[node name="StrongerFingerButton" type="Button" parent="BottomPanel"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(310, 220)
-layout_mode = 2
-autowrap_mode = 2
-text = "Stronger Finger"
-
-[node name="ButtonSpacer" type="Control" parent="BottomPanel"]
-custom_minimum_size = Vector2(20, 0)
-layout_mode = 2
-
-[node name="AutomaticFingerButton" type="Button" parent="BottomPanel"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(310, 220)
-layout_mode = 2
-autowrap_mode = 2
-text = "Automatic Finger"
-
-[node name="ButtonSpacer2" type="Control" parent="BottomPanel"]
-custom_minimum_size = Vector2(20, 0)
-layout_mode = 2
-
-[node name="LuckyPressButton" type="Button" parent="BottomPanel"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(310, 220)
-layout_mode = 2
-autowrap_mode = 2
-text = "Lucky Press"
+layer = 10

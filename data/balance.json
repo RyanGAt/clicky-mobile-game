@@ -1,0 +1,26 @@
+{
+    "base_click_power": 1,
+    "crit_multiplier": 5,
+    "max_crit_chance": 0.4,
+    "offline_efficiency": 0.5,
+    "max_offline_hours": 8,
+    "min_offline_seconds": 30,
+    "achievement_bonus": 0.01,
+    "mastery_thresholds": [
+        100,
+        1000,
+        10000
+    ],
+    "mastery_bonuses": [
+        0.02,
+        0.03,
+        0.05
+    ],
+    "perfect_press_chance": 0.004,
+    "perfect_press_multiplier": 25,
+    "streak_taps": 20,
+    "streak_window": 4.0,
+    "streak_duration": 5.0,
+    "streak_cooldown": 20.0,
+    "streak_multiplier": 2
+}
